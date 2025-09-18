@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { getFirestore, onSnapshot, collection, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -17,10 +16,15 @@ export default function StatusPage() {
   useEffect(() => {
     try {
       const firestore = getFirestore();
+      // Using a non-reserved collection name for the health check.
       const unsubscribe = onSnapshot(
-        doc(collection(firestore, '___test___')), // a lightweight check
+        doc(collection(firestore, 'status-check')), // a lightweight check
         {
-          next: () => setConnectionStatus('connected'),
+          next: () => {
+            if (connectionStatus === 'checking') {
+               setConnectionStatus('connected')
+            }
+          },
           error: (err) => {
             setConnectionStatus('error');
             setErrorDetails(err.message);
@@ -50,8 +54,6 @@ export default function StatusPage() {
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   };
-
-  const areVarsPresent = firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId;
 
   const StatusIndicator = () => {
     switch (connectionStatus) {
@@ -85,6 +87,15 @@ export default function StatusPage() {
               <p>API Key Loaded: <span className={firebaseConfig.apiKey ? 'text-green-400' : 'text-red-400'}>{firebaseConfig.apiKey ? 'Yes' : 'No'}</span></p>
             </div>
           </div>
+          
+          {connectionStatus === 'connected' && (
+            <div className="rounded-md border border-green-400/50 bg-green-400/10 p-4">
+              <h3 className="font-bold text-green-400">Connection Successful</h3>
+              <p className="mt-2 text-sm text-green-400/90">
+                Your app is successfully connected to the Firestore database. If notes are still not saving, ensure your security rules allow writes to the 'notes' collection.
+              </p>
+            </div>
+          )}
           
           {connectionStatus === 'error' && (
             <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
