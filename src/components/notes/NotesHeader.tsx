@@ -2,7 +2,8 @@
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, LogOut } from 'lucide-react';
+import { Search, LogOut, Settings } from 'lucide-react';
+import Link from 'next/link';
 
 interface NotesHeaderProps {
   onSearchChange: (term: string) => void;
@@ -25,6 +26,11 @@ export function NotesHeader({ onSearchChange, onLogout }: NotesHeaderProps) {
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
+        <Button asChild variant="ghost" size="icon" aria-label="System Status">
+          <Link href="/status">
+            <Settings className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+          </Link>
+        </Button>
         <Button variant="ghost" size="icon" onClick={onLogout} aria-label="Logout">
           <LogOut className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
         </Button>
