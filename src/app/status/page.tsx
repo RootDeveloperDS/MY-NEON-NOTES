@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getFirestore, onSnapshot, collection } from 'firebase/firestore';
+import { getFirestore, onSnapshot, collection, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,21 +12,26 @@ type Status = 'checking' | 'connected' | 'error';
 
 export default function StatusPage() {
   const [connectionStatus, setConnectionStatus] = useState<Status>('checking');
+  const [errorDetails, setErrorDetails] = useState('');
 
   useEffect(() => {
     try {
       const firestore = getFirestore();
-      // Using a lightweight query to check connection.
-      // onSnapshot on a non-existent document is a low-cost way to check.
-      const unsubscribe = onSnapshot(collection(firestore, 'notes'), {
-        next: () => setConnectionStatus('connected'),
-        error: () => setConnectionStatus('error'),
-      });
+      const unsubscribe = onSnapshot(
+        doc(collection(firestore, '___test___')), // a lightweight check
+        {
+          next: () => setConnectionStatus('connected'),
+          error: (err) => {
+            setConnectionStatus('error');
+            setErrorDetails(err.message);
+          },
+        }
+      );
       
-      // If we don't get a response in 10 seconds, assume error.
       const timeout = setTimeout(() => {
           if (connectionStatus === 'checking') {
               setConnectionStatus('error');
+              setErrorDetails('Connection timed out. This often happens if the database hasn\'t been created in Firebase or if security rules are too restrictive.');
           }
       }, 10000);
 
@@ -34,8 +39,9 @@ export default function StatusPage() {
         unsubscribe();
         clearTimeout(timeout);
       };
-    } catch (e) {
+    } catch (e: any) {
       setConnectionStatus('error');
+      setErrorDetails(e.message);
     }
   }, [connectionStatus]);
 
@@ -83,11 +89,12 @@ export default function StatusPage() {
           {connectionStatus === 'error' && (
             <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
                 <h3 className="font-bold text-destructive">Troubleshooting Tips</h3>
-                <ul className="mt-2 list-disc pl-5 text-sm text-destructive/90">
-                    <li>Double-check that you have copied your Firebase config values correctly into a <strong>.env.local</strong> file in the root of the project.</li>
-                    <li>Ensure your Firestore database has been created in the Firebase console.</li>
-                    <li>Check your browser's developer console (F12) for any specific error messages related to Firebase or network requests.</li>
-                    <li>Make sure your Firestore security rules allow read/write operations. For testing, you can set them to be public (but be sure to secure them later!).</li>
+                <p className='text-sm text-destructive/80 mt-2 mb-3'><strong>Error:</strong> {errorDetails}</p>
+                <ul className="mt-2 list-disc pl-5 text-sm text-destructive/90 space-y-2">
+                    <li><strong>Most Common Fix:</strong> Have you created the Firestore database in your Firebase project? Go to the "Firestore Database" section in the Firebase Console and click "Create database".</li>
+                    <li><strong>Security Rules:</strong> During creation, select **"Start in test mode"**. If you already created it, go to the "Rules" tab in Firestore and ensure your rules allow writes (for testing, you can use `allow read, write: if true;`).</li>
+                    <li>Double-check that you have copied your Firebase config values correctly into your <strong>.env.local</strong> file.</li>
+                    <li>Check your browser's developer console (F12) for more specific error messages.</li>
                 </ul>
             </div>
           )}
