@@ -12,11 +12,11 @@ interface NotesHeaderProps {
 
 export function NotesHeader({ onSearchChange, onLogout }: NotesHeaderProps) {
   return (
-    <header className="flex flex-col md:flex-row items-center justify-between gap-4">
+    <header className="flex flex-col items-center justify-between gap-4 md:flex-row">
       <h1 className="font-headline text-4xl text-primary drop-shadow-[0_0_5px_hsl(var(--primary))]">
         Neon Notes
       </h1>
-      <div className="flex w-full md:w-auto items-center gap-2">
+      <div className="flex w-full items-center gap-2 md:w-auto">
         <div className="relative w-full md:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
