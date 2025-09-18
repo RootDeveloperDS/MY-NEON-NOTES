@@ -46,7 +46,7 @@ export function NoteCard({ note, onEdit }: NoteCardProps) {
     setIsDeleteDialogOpen(false);
   };
   
-  const relativeTime = formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true });
+  const relativeTime = note.updatedAt ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true }) : 'just now';
 
   return (
     <>
