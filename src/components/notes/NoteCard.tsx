@@ -1,0 +1,100 @@
+'use client';
+
+import { useState } from 'react';
+import type { Note } from '@/lib/types';
+import { formatDistanceToNow } from 'date-fns';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { FilePenLine, Trash2, Copy, MoreVertical } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
+interface NoteCardProps {
+  note: Note;
+  onEdit: () => void;
+}
+
+export function NoteCard({ note, onEdit }: NoteCardProps) {
+  const { toast } = useToast();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(note.content);
+    toast({
+      title: 'Note Copied',
+      description: 'The note content has been copied to your clipboard.',
+    });
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteDoc(doc(db, 'notes', note.id));
+      toast({
+        title: 'Note Deleted',
+        description: 'The note has been successfully deleted.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete the note.',
+      });
+    }
+    setIsDeleteDialogOpen(false);
+  };
+  
+  const relativeTime = formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true });
+
+  return (
+    <>
+      <Card className="flex flex-col h-full border-primary/20 bg-card/80 transition-all duration-300 ease-in-out hover:border-primary/60 hover:-translate-y-1 hover:shadow-[0_10px_30px_-15px_hsl(var(--primary)/0.5)]">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <CardTitle className="font-headline text-lg text-primary">{note.title}</CardTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onEdit}><FilePenLine className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopy}><Copy className="mr-2 h-4 w-4" /> Copy</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <CardDescription>{relativeTime}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-grow">
+          <p className="text-muted-foreground line-clamp-4">{note.content}</p>
+        </CardContent>
+        <CardFooter>
+          {/* Future tags can go here */}
+        </CardFooter>
+      </Card>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this note?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your note from the servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
