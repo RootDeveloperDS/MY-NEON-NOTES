@@ -5,8 +5,7 @@ import type { Note } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { FilePenLine, Trash2, Copy, MoreVertical } from 'lucide-react';
+import { FilePenLine, Trash2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -53,23 +52,22 @@ export function NoteCard({ note, onEdit }: NoteCardProps) {
       <Card className="flex flex-col h-full border-primary/20 bg-card/80 transition-all duration-300 ease-in-out hover:border-primary/60 hover:-translate-y-1 hover:shadow-[0_10px_30px_-15px_hsl(var(--primary)/0.5)]">
         <CardHeader>
           <div className="flex justify-between items-start">
-            <CardTitle className="font-headline text-lg text-primary">{note.title}</CardTitle>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onEdit}><FilePenLine className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCopy}><Copy className="mr-2 h-4 w-4" /> Copy</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex-1">
+              <CardTitle className="font-headline text-lg text-primary">{note.title}</CardTitle>
+              <CardDescription>{relativeTime}</CardDescription>
+            </div>
+            <div className="flex items-center gap-1 -mt-2 -mr-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} aria-label="Edit note">
+                <FilePenLine className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy} aria-label="Copy note content">
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/80 hover:text-destructive" onClick={() => setIsDeleteDialogOpen(true)} aria-label="Delete note">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <CardDescription>{relativeTime}</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow">
           <p className="text-muted-foreground line-clamp-4">{note.content}</p>
