@@ -68,12 +68,16 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
 
     try {
       if (note) {
-        // Update existing note
+        // Update existing note, ensuring userId is preserved
         const noteRef = doc(db, 'notes', note.id);
-        await setDoc(noteRef, { ...data, updatedAt: serverTimestamp(), userId: user.uid }, { merge: true });
+        await setDoc(noteRef, { 
+          ...data, 
+          userId: note.userId, // Preserve original userId
+          updatedAt: serverTimestamp() 
+        }, { merge: true });
         toast({ title: 'Note Updated', description: 'Your note has been successfully updated.' });
       } else {
-        // Create new note
+        // Create new note with the current user's ID
         await addDoc(collection(db, 'notes'), { 
           ...data, 
           userId: user.uid,

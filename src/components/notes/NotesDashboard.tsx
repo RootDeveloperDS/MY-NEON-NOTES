@@ -24,7 +24,7 @@ export function NotesDashboard() {
     if (authLoading) {
       setLoading(true);
       return;
-    };
+    }
     if (!user) {
       setLoading(false);
       setNotes([]);
@@ -33,10 +33,11 @@ export function NotesDashboard() {
 
     setLoading(true);
     const q = query(
-      collection(db, 'notes'), 
-      where('userId', '==', user.uid), 
+      collection(db, 'notes'),
+      where('userId', '==', user.uid),
       orderBy('updatedAt', 'desc')
     );
+    
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const notesData: Note[] = [];
       querySnapshot.forEach((doc) => {
@@ -45,8 +46,9 @@ export function NotesDashboard() {
       setNotes(notesData);
       setLoading(false);
     }, (error) => {
-        console.error("Error fetching notes: ", error);
-        setLoading(false);
+      console.error("Error fetching notes: ", error);
+      // This is often a permissions error if Firestore rules are incorrect.
+      setLoading(false);
     });
 
     return () => unsubscribe();
