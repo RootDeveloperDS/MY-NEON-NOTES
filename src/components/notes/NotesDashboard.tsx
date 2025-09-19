@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
 import { NotesHeader } from '@/components/notes/NotesHeader';
@@ -10,12 +10,10 @@ import { NoteModal } from '@/components/notes/NoteModal';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
+import { useAuth } from '@/hooks/use-auth';
 
-interface NotesDashboardProps {
-  onLogout: () => void;
-}
-
-export function NotesDashboard({ onLogout }: NotesDashboardProps) {
+export function NotesDashboard() {
+  const { user, logout } = useAuth();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,7 +21,13 @@ export function NotesDashboard({ onLogout }: NotesDashboardProps) {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'notes'), orderBy('updatedAt', 'desc'));
+    if (!user) return;
+
+    const q = query(
+      collection(db, 'notes'), 
+      where('userId', '==', user.uid), 
+      orderBy('updatedAt', 'desc')
+    );
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const notesData: Note[] = [];
       querySnapshot.forEach((doc) => {
@@ -31,10 +35,13 @@ export function NotesDashboard({ onLogout }: NotesDashboardProps) {
       });
       setNotes(notesData);
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching notes: ", error);
+        setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const handleOpenModal = (note: Note | null = null) => {
     setSelectedNote(note);
@@ -58,7 +65,7 @@ export function NotesDashboard({ onLogout }: NotesDashboardProps) {
     <div className="relative min-h-screen p-4 md:p-8">
       <NotesHeader
         onSearchChange={setSearchTerm}
-        onLogout={onLogout}
+        onLogout={logout}
       />
 
       {loading ? (
