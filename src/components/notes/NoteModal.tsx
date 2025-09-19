@@ -91,7 +91,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter note title..." {...field} />
+                    <Input placeholder="Enter note title..." {...field} className="font-note" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -104,7 +104,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
                 <FormItem>
                   <FormLabel>Content</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Type your note here..." className="min-h-[200px]" {...field} />
+                    <Textarea placeholder="Type your note here..." className="min-h-[200px] font-note" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

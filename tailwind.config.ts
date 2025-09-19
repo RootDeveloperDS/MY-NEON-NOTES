@@ -12,6 +12,7 @@ export default {
       fontFamily: {
         body: ['Orbitron', 'sans-serif'],
         headline: ['Orbitron', 'sans-serif'],
+        note: ['"Source Code Pro"', 'monospace'],
         code: ['monospace'],
       },
       colors: {

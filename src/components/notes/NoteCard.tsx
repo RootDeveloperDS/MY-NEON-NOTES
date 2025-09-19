@@ -53,7 +53,7 @@ export function NoteCard({ note, onEdit }: NoteCardProps) {
         <CardHeader>
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <CardTitle className="font-headline text-lg text-primary">{note.title}</CardTitle>
+              <CardTitle className="font-note text-lg text-primary">{note.title}</CardTitle>
               <CardDescription>{relativeTime}</CardDescription>
             </div>
             <div className="flex items-center gap-1 -mt-2 -mr-2">
@@ -70,7 +70,7 @@ export function NoteCard({ note, onEdit }: NoteCardProps) {
           </div>
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="text-muted-foreground line-clamp-4">{note.content}</p>
+          <p className="font-note text-muted-foreground line-clamp-4">{note.content}</p>
         </CardContent>
         <CardFooter>
           {/* Future tags can go here */}
