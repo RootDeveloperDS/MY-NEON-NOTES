@@ -13,7 +13,7 @@ import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
 
 export function NotesDashboard() {
-  const { user, logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,8 +21,17 @@ export function NotesDashboard() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) {
+      setLoading(true);
+      return;
+    };
+    if (!user) {
+      setLoading(false);
+      setNotes([]);
+      return;
+    }
 
+    setLoading(true);
     const q = query(
       collection(db, 'notes'), 
       where('userId', '==', user.uid), 
@@ -41,7 +50,7 @@ export function NotesDashboard() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, authLoading]);
 
   const handleOpenModal = (note: Note | null = null) => {
     setSelectedNote(note);
