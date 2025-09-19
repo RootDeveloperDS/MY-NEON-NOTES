@@ -70,7 +70,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
       if (note) {
         // Update existing note
         const noteRef = doc(db, 'notes', note.id);
-        await setDoc(noteRef, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+        await setDoc(noteRef, { ...data, updatedAt: serverTimestamp(), userId: user.uid }, { merge: true });
         toast({ title: 'Note Updated', description: 'Your note has been successfully updated.' });
       } else {
         // Create new note

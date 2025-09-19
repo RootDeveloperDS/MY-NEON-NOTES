@@ -89,7 +89,7 @@ export function NotesDashboard() {
         </div>
       )}
       
-      {filteredNotes.length === 0 && !loading && (
+      {user && filteredNotes.length === 0 && !loading && (
         <div className="text-center py-20">
           <h2 className="text-2xl font-bold">No notes found.</h2>
           <p className="text-muted-foreground">Create your first note to get started.</p>
