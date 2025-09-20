@@ -80,7 +80,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
         // Create new note with the current user's ID
         await addDoc(collection(db, 'notes'), { 
           ...data, 
-          userId: activeUid,
+          userId: activeUid, // Explicitly add activeUid as userId
           createdAt: serverTimestamp(), 
           updatedAt: serverTimestamp() 
         });
