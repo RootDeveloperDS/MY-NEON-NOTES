@@ -14,6 +14,8 @@ import {
 import { auth } from '@/lib/firebase';
 import { useSearchParams } from 'next/navigation';
 import { useToast } from './use-toast';
+import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AuthContextType {
   user: User | null; // Firebase user object
@@ -40,9 +42,20 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
     const urlUid = searchParams.get('UID');
     
     if (urlUid) {
+      // Prevent re-running if we already authenticated via URL
+      if (isUrlAuth && activeUid === urlUid) {
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       fetch(`https://visar-backend.onrender.com/api/verify_uid?uid=${urlUid}`)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return res.json();
+        })
         .then(data => {
           if (data.valid) {
             setActiveUid(urlUid);
@@ -51,6 +64,13 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
           } else {
             toast({ variant: 'destructive', title: 'Invalid UID', description: 'The UID in the URL is not valid. Please log in normally.' });
             setIsUrlAuth(false);
+            // Fallback to normal auth
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+              setUser(user);
+              setActiveUid(user?.uid || null);
+              setLoading(false);
+            });
+            return unsubscribe;
           }
         })
         .catch((err) => {
@@ -58,29 +78,22 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
           setIsUrlAuth(false);
         })
         .finally(() => {
-            // Fallback to regular auth state change to stop loading
-            // onAuthStateChanged will handle it from here
+            setLoading(false);
         });
+
+    } else {
+       // Standard Firebase Auth
+       const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        if (!isUrlAuth) {
+          setActiveUid(user ? user.uid : null);
+        }
+        setLoading(false);
+      });
+      return () => unsubscribe();
     }
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      // Only set activeUid from firebase if NOT using a URL uid
-      if (user && !isUrlAuth) {
-        setActiveUid(user.uid);
-      } else if (!user && !urlUid) {
-        setActiveUid(null);
-      }
-
-      // Stop loading only if not in URL auth flow, 
-      // or if url auth failed and we are back to normal auth
-      if (!urlUid || (urlUid && !isUrlAuth)) {
-          setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [searchParams, isUrlAuth, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -109,7 +122,6 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-
 export function AuthProvider({ children }: { children: ReactNode }) {
     // Suspense Boundary is needed for useSearchParams in child
     return (
@@ -128,9 +140,6 @@ export const useAuth = () => {
 };
 
 // Need a loader for suspense
-import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
-
 export function Loader({ className, ...props }: React.ComponentProps<typeof Loader2>) {
   return (
     <Loader2 className={cn("animate-spin", className)} {...props} />
