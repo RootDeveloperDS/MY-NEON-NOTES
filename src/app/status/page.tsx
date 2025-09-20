@@ -75,7 +75,7 @@ export default function StatusPage() {
             <StatusIndicator />
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="font-note space-y-6">
           <div>
             <h3 className="text-lg font-semibold text-accent">Firebase Configuration</h3>
             <p className="text-sm text-muted-foreground">

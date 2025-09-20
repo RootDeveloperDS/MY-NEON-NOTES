@@ -51,23 +51,25 @@ export function NoteCard({ note, onEdit }: NoteCardProps) {
     <>
       <Card className="flex flex-col h-full border-primary/20 bg-card/80 transition-all duration-300 ease-in-out hover:border-primary/60 hover:-translate-y-1 hover:shadow-[0_10px_30px_-15px_hsl(var(--primary)/0.5)]">
         <CardHeader>
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <CardTitle className="font-note text-lg text-primary">{note.title}</CardTitle>
-              <CardDescription>{relativeTime}</CardDescription>
-            </div>
-            <div className="flex items-center gap-1 -mt-2 -mr-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} aria-label="Edit note">
-                <FilePenLine className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy} aria-label="Copy note content">
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/80 hover:text-destructive" onClick={() => setIsDeleteDialogOpen(true)} aria-label="Delete note">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+        <div className="flex flex-wrap justify-between items-start gap-2">
+          {/* Title + Description */}
+          <div className="flex-1 min-w-[0]">
+            <CardTitle className="font-note text-lg text-primary truncate">{note.title}</CardTitle>
+            <CardDescription>{relativeTime}</CardDescription>
           </div>
+          {/* Buttons */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} aria-label="Edit note">
+              <FilePenLine className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy} aria-label="Copy note content">
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/80 hover:text-destructive" onClick={() => setIsDeleteDialogOpen(true)} aria-label="Delete note">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
         </CardHeader>
         <CardContent className="flex-grow">
           <p className="font-note text-muted-foreground line-clamp-4">{note.content}</p>

@@ -71,9 +71,9 @@ export function LoginPage() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="font-note grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Sign In / Login</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up(New User)</TabsTrigger>
             </TabsList>
             <Form {...form}>
                 <form>
@@ -102,7 +102,7 @@ export function LoginPage() {
             </div>
           </div>
 
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={!!loading}>
+          <Button variant="outline" className="font-note w-full" onClick={handleGoogleSignIn} disabled={!!loading}>
             {loading === 'google' ? <Loader className="animate-spin" /> : <><GoogleIcon className="mr-2" /> Google</>}
           </Button>
         </CardContent>
@@ -122,7 +122,7 @@ function AuthFormFields({ form }: { form: any }) {
                     <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                            <Input placeholder="user@domain.com" {...field} />
+                            <Input placeholder="user@gmail.com" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -135,7 +135,7 @@ function AuthFormFields({ form }: { form: any }) {
                     <FormItem>
                         <FormLabel>Password</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                            <Input type="password" placeholder="P4$sW9rd" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
