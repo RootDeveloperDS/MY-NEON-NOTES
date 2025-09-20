@@ -72,7 +72,7 @@ export function LoginPage() {
         <CardContent>
         <Tabs defaultValue="signin" className="w-full">
             {/* TabsList: make it responsive with flex and gap for mobile */}
-            <TabsList className="font-note flex w-full justify-between gap-2 sm:gap-4">
+            <TabsList className=" flex w-full justify-between gap-2 sm:gap-4">
               <TabsTrigger 
                 value="signin" 
                 className="flex-1 text-center whitespace-nowrap px-2 py-1 sm:px-4 sm:py-2"
