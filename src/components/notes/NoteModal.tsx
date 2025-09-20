@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 const noteFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
@@ -29,6 +30,8 @@ interface NoteModalProps {
 
 export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
     defaultValues: {
@@ -54,23 +57,42 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
   const isSubmitting = form.formState.isSubmitting;
 
   const onSubmit = async (data: NoteFormValues) => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to save notes.',
+      });
+      return;
+    }
+
     try {
       if (note) {
-        // Update existing note
+        // Update existing note, ensuring userId is preserved
         const noteRef = doc(db, 'notes', note.id);
-        await setDoc(noteRef, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+        await setDoc(noteRef, { 
+          ...data, 
+          userId: note.userId, // Preserve original userId
+          updatedAt: serverTimestamp() 
+        }, { merge: true });
         toast({ title: 'Note Updated', description: 'Your note has been successfully updated.' });
       } else {
-        // Create new note
-        await addDoc(collection(db, 'notes'), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        // Create new note with the current user's ID
+        await addDoc(collection(db, 'notes'), { 
+          ...data, 
+          userId: user.uid,
+          createdAt: serverTimestamp(), 
+          updatedAt: serverTimestamp() 
+        });
         toast({ title: 'Note Created', description: 'Your new note has been saved.' });
       }
       onClose();
     } catch (error) {
+      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: 'Something went wrong. Please check console for details.',
       });
     }
   };
@@ -114,7 +136,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
               <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button type="submit" disabled={isSubmitting || !user} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 {isSubmitting ? 'Saving...' : 'Save Note'}
               </Button>
             </DialogFooter>
