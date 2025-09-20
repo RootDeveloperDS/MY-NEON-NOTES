@@ -6,7 +6,7 @@ import { NotesDashboard } from '@/components/notes/NotesDashboard';
 import { Loader } from '@/components/ui/loader';
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { activeUid, loading } = useAuth();
 
   if (loading) {
     return (
@@ -18,7 +18,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background text-foreground font-body">
-      {user ? <NotesDashboard /> : <LoginPage />}
+      {activeUid ? <NotesDashboard /> : <LoginPage />}
     </main>
   );
 }

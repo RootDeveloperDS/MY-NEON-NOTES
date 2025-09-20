@@ -30,7 +30,7 @@ interface NoteModalProps {
 
 export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { activeUid } = useAuth();
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
@@ -57,7 +57,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
   const isSubmitting = form.formState.isSubmitting;
 
   const onSubmit = async (data: NoteFormValues) => {
-    if (!user) {
+    if (!activeUid) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -80,7 +80,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
         // Create new note with the current user's ID
         await addDoc(collection(db, 'notes'), { 
           ...data, 
-          userId: user.uid,
+          userId: activeUid,
           createdAt: serverTimestamp(), 
           updatedAt: serverTimestamp() 
         });
@@ -136,7 +136,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
               <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting || !user} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button type="submit" disabled={isSubmitting || !activeUid} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 {isSubmitting ? 'Saving...' : 'Save Note'}
               </Button>
             </DialogFooter>

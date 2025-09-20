@@ -1,8 +1,8 @@
 'use client';
 
+import * as React from 'react';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { 
-  getAuth, 
   onAuthStateChanged, 
   signOut, 
   GoogleAuthProvider, 
@@ -12,10 +12,13 @@ import {
   User
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useSearchParams } from 'next/navigation';
 
 interface AuthContextType {
-  user: User | null;
+  user: User | null; // Firebase user object
+  activeUid: string | null; // The UID to use for DB operations (from Firebase or URL)
   loading: boolean;
+  isUrlAuth: boolean; // Flag to indicate if auth is from URL
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
@@ -24,17 +27,53 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+function AuthProviderInternal({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [activeUid, setActiveUid] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isUrlAuth, setIsUrlAuth] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
+    const urlUid = searchParams.get('UID');
+    
+    if (urlUid) {
+      setLoading(true);
+      fetch(`https://visar-backend.onrender.com/api/verify_uid?uid=${urlUid}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.valid) {
+            setActiveUid(urlUid);
+            setIsUrlAuth(true);
+            setLoading(false);
+          } else {
+            // Invalid UID, proceed with normal auth flow
+            setIsUrlAuth(false);
+            // let onAuthStateChanged handle it
+          }
+        })
+        .catch(() => {
+          // API error, proceed with normal auth flow
+          setIsUrlAuth(false);
+          // let onAuthStateChanged handle it
+        });
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setLoading(false);
+      if (user && !isUrlAuth) {
+        setActiveUid(user.uid);
+      } else if (!user && !urlUid) {
+        setActiveUid(null);
+      }
+      // only stop loading if not in URL auth flow or if url auth failed
+      if (!urlUid || (urlUid && !isUrlAuth)) {
+          setLoading(false);
+      }
     });
+
     return () => unsubscribe();
-  }, []);
+  }, [searchParams, isUrlAuth]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -50,12 +89,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await signOut(auth);
+    // For URL auth, we just redirect to the base URL
+    if (isUrlAuth) {
+      window.location.href = '/';
+    } else {
+      await signOut(auth);
+    }
   };
 
-  const value = { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, logout };
+  const value = { user, activeUid, loading, isUrlAuth, signInWithGoogle, signInWithEmail, signUpWithEmail, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+    // Suspense Boundary is needed for useSearchParams in child
+    return (
+        <React.Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-background"><Loader /></div>}>
+            <AuthProviderInternal>{children}</AuthProviderInternal>
+        </React.Suspense>
+    );
 }
 
 export const useAuth = () => {
@@ -65,3 +119,13 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Need a loader for suspense
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+
+export function Loader({ className, ...props }: React.ComponentProps<typeof Loader2>) {
+  return (
+    <Loader2 className={cn("animate-spin", className)} {...props} />
+  );
+}

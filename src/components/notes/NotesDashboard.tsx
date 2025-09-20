@@ -13,7 +13,7 @@ import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
 
 export function NotesDashboard() {
-  const { user, loading: authLoading, logout } = useAuth();
+  const { activeUid, loading: authLoading, logout, isUrlAuth } = useAuth();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,7 +25,7 @@ export function NotesDashboard() {
       setLoading(true);
       return;
     }
-    if (!user) {
+    if (!activeUid) {
       setLoading(false);
       setNotes([]);
       return;
@@ -34,7 +34,7 @@ export function NotesDashboard() {
     setLoading(true);
     const q = query(
       collection(db, 'notes'),
-      where('userId', '==', user.uid),
+      where('userId', '==', activeUid),
       orderBy('updatedAt', 'desc')
     );
     
@@ -52,7 +52,7 @@ export function NotesDashboard() {
     });
 
     return () => unsubscribe();
-  }, [user, authLoading]);
+  }, [activeUid, authLoading]);
 
   const handleOpenModal = (note: Note | null = null) => {
     setSelectedNote(note);
@@ -77,6 +77,7 @@ export function NotesDashboard() {
       <NotesHeader
         onSearchChange={setSearchTerm}
         onLogout={logout}
+        showSettings={!isUrlAuth}
       />
 
       {loading ? (
@@ -91,7 +92,7 @@ export function NotesDashboard() {
         </div>
       )}
       
-      {user && filteredNotes.length === 0 && !loading && (
+      {activeUid && filteredNotes.length === 0 && !loading && (
         <div className="text-center py-20">
           <h2 className="text-2xl font-bold">No notes found.</h2>
           <p className="text-muted-foreground">Create your first note to get started.</p>
