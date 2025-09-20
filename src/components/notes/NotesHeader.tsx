@@ -28,7 +28,8 @@ export function NotesHeader({ onSearchChange, onLogout, showSettings }: NotesHea
           />
         </div>
         {showSettings && (
-          <Button asChild variant="ghost" size="icon" aria-label="System Status" className="hidden">
+          <Button asChild variant="ghost" size="icon" aria-label="System Status" className="hidden"> 
+          {/*Setting Button is now hidden by default*/}
             <Link href="/status">
               <Settings className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
             </Link>
