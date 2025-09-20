@@ -70,26 +70,48 @@ export function LoginPage() {
           <CardDescription>System Access Protocol</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="font-note grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In / Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up(New User)</TabsTrigger>
+        <Tabs defaultValue="signin" className="w-full">
+            {/* TabsList: make it responsive with flex and gap for mobile */}
+            <TabsList className="font-note flex w-full justify-between gap-2 sm:gap-4">
+              <TabsTrigger 
+                value="signin" 
+                className="flex-1 text-center whitespace-nowrap px-2 py-1 sm:px-4 sm:py-2"
+              >
+                Sign In
+              </TabsTrigger>
+
+              <TabsTrigger 
+                value="signup" 
+                className="flex-1 text-center whitespace-nowrap px-2 py-1 sm:px-4 sm:py-2"
+              >
+                New User
+              </TabsTrigger>
             </TabsList>
+
             <Form {...form}>
-                <form>
-                    <TabsContent value="signin" className="space-y-4 pt-4">
-                        <AuthFormFields form={form} />
-                        <Button onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))} disabled={!!loading} className="w-full">
-                            {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign In'}
-                        </Button>
-                    </TabsContent>
-                    <TabsContent value="signup" className="space-y-4 pt-4">
-                        <AuthFormFields form={form} />
-                        <Button onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))} disabled={!!loading} className="w-full">
-                           {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign Up'}
-                        </Button>
-                    </TabsContent>
-                </form>
+              <form>
+                <TabsContent value="signin" className="space-y-4 pt-4">
+                  <AuthFormFields form={form} />
+                  <Button 
+                    onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))} 
+                    disabled={!!loading} 
+                    className="w-full"
+                  >
+                    {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign In'}
+                  </Button>
+                </TabsContent>
+
+                <TabsContent value="signup" className="space-y-4 pt-4">
+                  <AuthFormFields form={form} />
+                  <Button 
+                    onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))} 
+                    disabled={!!loading} 
+                    className="w-full"
+                  >
+                    {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign Up'}
+                  </Button>
+                </TabsContent>
+              </form>
             </Form>
           </Tabs>
           
