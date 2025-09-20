@@ -10,8 +10,9 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader />
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background">
+        <Loader className="h-10 w-10 text-primary" />
+        <p className="font-note text-muted-foreground">Verifying Credentials...</p>
       </div>
     );
   }

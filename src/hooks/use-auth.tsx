@@ -13,6 +13,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useSearchParams } from 'next/navigation';
+import { useToast } from './use-toast';
 
 interface AuthContextType {
   user: User | null; // Firebase user object
@@ -33,6 +34,7 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isUrlAuth, setIsUrlAuth] = useState(false);
   const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     const urlUid = searchParams.get('UID');
@@ -45,35 +47,40 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
           if (data.valid) {
             setActiveUid(urlUid);
             setIsUrlAuth(true);
-            setLoading(false);
+            toast({ title: 'Login Successful', description: 'Logged in using URL UID.' });
           } else {
-            // Invalid UID, proceed with normal auth flow
+            toast({ variant: 'destructive', title: 'Invalid UID', description: 'The UID in the URL is not valid. Please log in normally.' });
             setIsUrlAuth(false);
-            // let onAuthStateChanged handle it
           }
         })
-        .catch(() => {
-          // API error, proceed with normal auth flow
+        .catch((err) => {
+          toast({ variant: 'destructive', title: 'API Error', description: `Could not verify UID: ${err.message}` });
           setIsUrlAuth(false);
-          // let onAuthStateChanged handle it
+        })
+        .finally(() => {
+            // Fallback to regular auth state change to stop loading
+            // onAuthStateChanged will handle it from here
         });
     }
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      // Only set activeUid from firebase if NOT using a URL uid
       if (user && !isUrlAuth) {
         setActiveUid(user.uid);
       } else if (!user && !urlUid) {
         setActiveUid(null);
       }
-      // only stop loading if not in URL auth flow or if url auth failed
+
+      // Stop loading only if not in URL auth flow, 
+      // or if url auth failed and we are back to normal auth
       if (!urlUid || (urlUid && !isUrlAuth)) {
           setLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [searchParams, isUrlAuth]);
+  }, [searchParams, isUrlAuth, toast]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
