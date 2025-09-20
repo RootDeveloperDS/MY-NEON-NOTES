@@ -99,13 +99,13 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] border-accent/50 shadow-[0_0_20px_hsl(var(--accent)/0.4)]">
+      <DialogContent className="sm:max-w-[600px] border-accent/50 shadow-[0_0_20px_hsl(var(--accent)/0.4)] flex flex-col resize overflow-auto min-h-[400px] min-w-[300px]">
         <DialogHeader>
           <DialogTitle className="font-headline text-accent text-2xl">{note ? 'Edit Note' : 'Create Note'}</DialogTitle>
           <DialogDescription>{note ? 'Modify your note details below.' : 'Fill out the details for your new note.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-grow flex flex-col">
             <FormField
               control={form.control}
               name="title"
@@ -123,10 +123,10 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
               control={form.control}
               name="content"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex-grow flex flex-col">
                   <FormLabel>Content</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Type your note here..." className="min-h-[200px] font-note" {...field} />
+                    <Textarea placeholder="Type your note here..." className="min-h-[200px] font-note flex-grow resize-none" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
