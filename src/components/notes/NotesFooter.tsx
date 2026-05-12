@@ -25,8 +25,9 @@ export function NotesFooter() {
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Built with <span aria-hidden="true">🛠️</span> and
+            {' '}
             <Heart className="mx-1 inline h-3.5 w-3.5 text-destructive" aria-hidden="true" />
-            <span className="sr-only"> love</span>
+            <span className="sr-only">love</span>
           </p>
         </div>
 
@@ -42,7 +43,7 @@ export function NotesFooter() {
         </div>
 
         <div className="space-y-2.5 lg:text-right">
-          <p className="text-sm leading-relaxed text-muted-foreground">100% Open Source • Contributions are Welcome</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">100% Open Source - Contributions are Welcome</p>
           <p className="text-sm leading-relaxed text-muted-foreground">⭐ Star the repo if you like the project</p>
           <Link
             href="https://github.com/RootDeveloperDS/MY-NEON-NOTES/"
