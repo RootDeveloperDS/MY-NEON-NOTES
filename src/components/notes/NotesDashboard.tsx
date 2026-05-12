@@ -17,6 +17,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export function NotesDashboard() {
+  const splitViewHeightClass = 'lg:h-[calc(100vh-12rem)]';
+  const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
+
   const { activeUid, loading: authLoading, logout, isUrlAuth } = useAuth();
   const { toast } = useToast();
   const [notes, setNotes] = useState<Note[]>([]);
@@ -160,7 +163,7 @@ export function NotesDashboard() {
               ))}
             </div>
           ) : (
-            <div className="mt-8 transition-all duration-300 lg:grid lg:h-[calc(100vh-12rem)] lg:grid-cols-[minmax(260px,32%)_1fr] lg:gap-5">
+            <div className={`mt-8 transition-all duration-300 lg:grid ${splitViewHeightClass} lg:grid-cols-[minmax(260px,32%)_1fr] lg:gap-5`}>
               <aside className="hidden lg:block overflow-y-auto pr-1">
                 <div className="space-y-2">
                   {filteredNotes.map((note) => {
@@ -176,7 +179,7 @@ export function NotesDashboard() {
                         onClick={() => handleViewNote(note)}
                         className={`w-full rounded-lg border p-3 text-left transition-all duration-200 ${
                           isActive
-                            ? 'border-primary/80 bg-primary/10 shadow-[0_0_16px_hsl(var(--primary)/0.35)]'
+                            ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
                             : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
                         }`}
                       >
