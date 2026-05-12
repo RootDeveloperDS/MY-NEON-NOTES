@@ -85,7 +85,7 @@ export function NotesDashboard() {
   const latestViewingNote = useMemo(() => {
     if (!viewingNote) return null;
     return notes.find((note) => note.id === viewingNote.id) ?? null;
-  }, [notes, viewingNote?.id]);
+  }, [notes, viewingNote]);
 
   useEffect(() => {
     if (!viewingNote) return;
