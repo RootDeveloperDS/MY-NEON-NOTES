@@ -16,10 +16,10 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-export function NotesDashboard() {
-  const splitViewHeightClass = 'lg:h-[calc(100vh-12rem)]';
-  const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
+const splitViewHeightClass = 'lg:h-[calc(100vh-12rem)]';
+const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
 
+export function NotesDashboard() {
   const { activeUid, loading: authLoading, logout, isUrlAuth } = useAuth();
   const { toast } = useToast();
   const [notes, setNotes] = useState<Note[]>([]);
@@ -82,10 +82,14 @@ export function NotesDashboard() {
     );
   }, [notes, searchTerm]);
 
+  const latestViewingNote = useMemo(() => {
+    if (!viewingNote) return null;
+    return notes.find((note) => note.id === viewingNote.id) ?? null;
+  }, [notes, viewingNote?.id]);
+
   useEffect(() => {
     if (!viewingNote) return;
 
-    const latestViewingNote = notes.find((note) => note.id === viewingNote.id);
     if (!latestViewingNote) {
       setViewingNote(null);
       setIsViewerDeleteDialogOpen(false);
@@ -101,7 +105,7 @@ export function NotesDashboard() {
     if (hasViewerContentChanged) {
       setViewingNote(latestViewingNote);
     }
-  }, [notes, viewingNote]);
+  }, [latestViewingNote, viewingNote]);
 
   const handleViewNote = (note: Note) => {
     setViewingNote(note);
