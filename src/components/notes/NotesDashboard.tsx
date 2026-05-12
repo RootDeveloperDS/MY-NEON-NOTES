@@ -96,11 +96,15 @@ export function NotesDashboard() {
       return;
     }
 
+    const hasUpdatedAtChanged =
+      latestViewingNote.updatedAt && viewingNote.updatedAt
+        ? !latestViewingNote.updatedAt.isEqual(viewingNote.updatedAt)
+        : latestViewingNote.updatedAt !== viewingNote.updatedAt;
+
     const hasViewerContentChanged =
       latestViewingNote.title !== viewingNote.title ||
       latestViewingNote.content !== viewingNote.content ||
-      latestViewingNote.updatedAt?.seconds !== viewingNote.updatedAt?.seconds ||
-      latestViewingNote.updatedAt?.nanoseconds !== viewingNote.updatedAt?.nanoseconds;
+      hasUpdatedAtChanged;
 
     if (hasViewerContentChanged) {
       setViewingNote(latestViewingNote);
