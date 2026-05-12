@@ -78,6 +78,21 @@
   .animate-neon-glow {
     animation: neon-glow-button 2s ease-in-out infinite;
   }
+
+  @keyframes footer-fade {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-footer-fade {
+    animation: footer-fade 0.5s ease-out both;
+  }
   
   @keyframes glitch {
     2%,64%{ transform: translate(2px,0) skew(0deg); }

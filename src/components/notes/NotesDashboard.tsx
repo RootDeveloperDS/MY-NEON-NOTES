@@ -8,6 +8,7 @@ import { NotesHeader } from '@/components/notes/NotesHeader';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { NoteModal } from '@/components/notes/NoteModal';
 import { NoteViewer } from '@/components/notes/NoteViewer';
+import { NotesFooter } from '@/components/notes/NotesFooter';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
@@ -265,6 +266,8 @@ export function NotesDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <NotesFooter />
     </div>
   );
 }
