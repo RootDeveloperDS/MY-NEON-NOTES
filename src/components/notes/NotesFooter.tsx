@@ -13,7 +13,7 @@ export function NotesFooter() {
           <p className="font-note text-primary">
             Neon Notes — made by Devansh Sharma (RootDeveloperDS)
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground" aria-label="Built with tools and love">
             Built with <span aria-hidden="true">🛠️</span> and <Heart className="mx-1 inline h-3.5 w-3.5 text-destructive" aria-hidden="true" />
           </p>
         </div>
