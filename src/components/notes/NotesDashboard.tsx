@@ -18,7 +18,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const splitViewHeightClass = 'lg:h-[calc(100vh-12rem)]';
+const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
+const dashboardBottomSpacingClass = 'pb-28 md:pb-32';
 
 export function NotesDashboard() {
   const { activeUid, loading: authLoading, logout, isUrlAuth } = useAuth();
@@ -147,7 +149,7 @@ export function NotesDashboard() {
   };
 
   return (
-    <div className="relative min-h-screen p-4 pb-28 md:p-8 md:pb-32">
+    <div className={`relative min-h-screen p-4 md:p-8 ${dashboardBottomSpacingClass}`}>
       <NotesHeader
         onSearchChange={setSearchTerm}
         onLogout={logout}
@@ -172,7 +174,7 @@ export function NotesDashboard() {
               ))}
             </div>
           ) : (
-            <div className={`mt-8 transition-all duration-300 lg:grid ${splitViewHeightClass} lg:grid-cols-[minmax(260px,32%)_1fr] lg:gap-5`}>
+              <div className={`mt-8 transition-all duration-300 lg:grid ${splitViewHeightClass} ${splitViewGridClass} lg:gap-5`}>
               <aside className="hidden lg:block overflow-y-auto pr-1">
                 <div className="space-y-2">
                   {filteredNotes.map((note) => {

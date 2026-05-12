@@ -23,8 +23,10 @@ export function NotesFooter() {
             </Link>{' '}
             (RootDeveloperDS)
           </p>
-          <p className="text-sm leading-relaxed text-muted-foreground" aria-label="Built with tools and love">
-            Built with <span aria-hidden="true">🛠️</span> and <Heart className="mx-1 inline h-3.5 w-3.5 text-destructive" aria-hidden="true" />
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Built with <span aria-hidden="true">🛠️</span> and
+            <Heart className="mx-1 inline h-3.5 w-3.5 text-destructive" aria-hidden="true" />
+            <span className="sr-only"> love</span>
           </p>
         </div>
 
