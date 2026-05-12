@@ -147,7 +147,7 @@ export function NotesDashboard() {
   };
 
   return (
-    <div className="relative min-h-screen p-4 md:p-8">
+    <div className="relative min-h-screen p-4 pb-28 md:p-8 md:pb-32">
       <NotesHeader
         onSearchChange={setSearchTerm}
         onLogout={logout}
@@ -221,7 +221,7 @@ export function NotesDashboard() {
 
       <Button
         onClick={() => handleOpenModal()}
-        className="fixed bottom-4 right-4 md:bottom-8 md:right-8 h-14 w-14 md:h-16 md:w-16 rounded-full bg-primary text-primary-foreground shadow-lg animate-neon-glow"
+        className="fixed bottom-4 right-4 z-30 md:bottom-8 md:right-8 h-14 w-14 md:h-16 md:w-16 rounded-full bg-primary text-primary-foreground shadow-lg animate-neon-glow"
         aria-label="Add new note"
       >
         <Plus className="h-8 w-8" />

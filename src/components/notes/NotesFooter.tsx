@@ -7,13 +7,23 @@ const TECH_STACK = ['React', 'Next.js', 'Firebase', 'TailwindCSS', 'Genkit'];
 
 export function NotesFooter() {
   return (
-    <footer className="mt-12 rounded-xl border border-primary/30 border-t-primary/60 bg-card/60 px-5 py-6 shadow-[0_-2px_20px_hsl(var(--primary)/0.18)] backdrop-blur-sm animate-footer-fade">
-      <div className="flex flex-col gap-6 text-center lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-start lg:text-left">
-        <div className="space-y-2">
-          <p className="font-note text-primary">
-            Neon Notes — made by Devansh Sharma (RootDeveloperDS)
+    <footer className="mt-14 border-t border-primary/25 bg-card/40 px-5 py-7 backdrop-blur-sm animate-footer-fade">
+      <div className="font-body flex flex-col gap-6 text-center lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-start lg:text-left">
+        <div className="space-y-2.5">
+          <p className="text-sm leading-relaxed text-foreground md:text-base">
+            Neon Notes — made by{' '}
+            <Link
+              href="https://devanshsharma.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit Devansh Sharma portfolio"
+              className="font-medium text-primary underline decoration-primary/70 underline-offset-4 transition-colors hover:text-accent"
+            >
+              Devansh Sharma
+            </Link>{' '}
+            (RootDeveloperDS)
           </p>
-          <p className="text-sm text-muted-foreground" aria-label="Built with tools and love">
+          <p className="text-sm leading-relaxed text-muted-foreground" aria-label="Built with tools and love">
             Built with <span aria-hidden="true">🛠️</span> and <Heart className="mx-1 inline h-3.5 w-3.5 text-destructive" aria-hidden="true" />
           </p>
         </div>
@@ -22,22 +32,22 @@ export function NotesFooter() {
           {TECH_STACK.map((tech) => (
             <span
               key={tech}
-              className="rounded-full border border-primary/50 bg-background/60 px-2.5 py-1 text-xs text-primary shadow-[0_0_10px_hsl(var(--primary)/0.22)]"
+              className="rounded-full border border-primary/35 bg-background/55 px-2.5 py-1 text-xs font-medium text-foreground/90"
             >
               {tech}
             </span>
           ))}
         </div>
 
-        <div className="space-y-2 lg:text-right">
-          <p className="text-sm text-muted-foreground">100% Open Source • Contributions are Welcome</p>
-          <p className="text-sm text-primary">⭐ Star the repo if you like the project</p>
+        <div className="space-y-2.5 lg:text-right">
+          <p className="text-sm leading-relaxed text-muted-foreground">100% Open Source • Contributions are Welcome</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">⭐ Star the repo if you like the project</p>
           <Link
             href="https://github.com/RootDeveloperDS/MY-NEON-NOTES/"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Open Neon Notes repository on GitHub"
-            className="inline-flex items-center gap-2 text-sm text-primary transition-all duration-300 hover:text-accent hover:drop-shadow-[0_0_8px_hsl(var(--primary))]"
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary underline decoration-primary/60 underline-offset-4 transition-colors duration-200 hover:text-accent"
           >
             <Github className="h-4 w-4" />
             <span>GitHub Repository</span>
