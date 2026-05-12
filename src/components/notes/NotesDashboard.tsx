@@ -89,7 +89,13 @@ export function NotesDashboard() {
       return;
     }
 
-    if (latestViewingNote !== viewingNote) {
+    const hasViewerContentChanged =
+      latestViewingNote.title !== viewingNote.title ||
+      latestViewingNote.content !== viewingNote.content ||
+      latestViewingNote.updatedAt?.seconds !== viewingNote.updatedAt?.seconds ||
+      latestViewingNote.updatedAt?.nanoseconds !== viewingNote.updatedAt?.nanoseconds;
+
+    if (hasViewerContentChanged) {
       setViewingNote(latestViewingNote);
     }
   }, [notes, viewingNote]);
