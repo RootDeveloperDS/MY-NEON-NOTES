@@ -14,9 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 interface NoteCardProps {
   note: Note;
   onEdit: () => void;
+  onView: () => void;
 }
 
-export function NoteCard({ note, onEdit }: NoteCardProps) {
+export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -44,12 +45,30 @@ export function NoteCard({ note, onEdit }: NoteCardProps) {
     }
     setIsDeleteDialogOpen(false);
   };
+
+  const handleEditClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onEdit();
+  };
+
+  const handleCopyClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    handleCopy();
+  };
+
+  const handleDeleteClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setIsDeleteDialogOpen(true);
+  };
   
   const relativeTime = note.updatedAt ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true }) : 'just now';
 
   return (
     <>
-      <Card className="flex flex-col h-full border-primary/20 bg-card/80 transition-all duration-300 ease-in-out hover:border-primary/60 hover:-translate-y-1 hover:shadow-[0_10px_30px_-15px_hsl(var(--primary)/0.5)]">
+      <Card
+        onClick={onView}
+        className="flex flex-col h-full border-primary/20 bg-card/80 transition-all duration-300 ease-in-out hover:border-primary/60 hover:-translate-y-1 hover:shadow-[0_10px_30px_-15px_hsl(var(--primary)/0.5)] cursor-pointer"
+      >
         <CardHeader>
         <div className="flex flex-wrap justify-between items-start gap-2">
           {/* Title + Description */}
@@ -59,13 +78,13 @@ export function NoteCard({ note, onEdit }: NoteCardProps) {
           </div>
           {/* Buttons */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} aria-label="Edit note">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEditClick} aria-label="Edit note">
               <FilePenLine className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy} aria-label="Copy note content">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyClick} aria-label="Copy note content">
               <Copy className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/80 hover:text-destructive" onClick={() => setIsDeleteDialogOpen(true)} aria-label="Delete note">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/80 hover:text-destructive" onClick={handleDeleteClick} aria-label="Delete note">
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>

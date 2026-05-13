@@ -144,7 +144,7 @@ function AuthFormFields({ form }: { form: any }) {
                     <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                            <Input placeholder="user@gmail.com" {...field} />
+                            <Input placeholder="user@gmail.com" className="font-auth-input" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -157,7 +157,7 @@ function AuthFormFields({ form }: { form: any }) {
                     <FormItem>
                         <FormLabel>Password</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="P4$sW9rd" {...field} />
+                            <Input type="password" placeholder="P4$sW9rd" className="font-auth-input" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>

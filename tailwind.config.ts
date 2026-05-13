@@ -14,6 +14,7 @@ export default {
         headline: ['Orbitron', 'sans-serif'],
         note: ['"Source Code Pro"', 'monospace'],
         code: ['monospace'],
+        'auth-input': ['Roboto', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
