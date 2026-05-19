@@ -1,0 +1,38 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#050816" />
+      <stop offset="0.52" stop-color="#0B1230" />
+      <stop offset="1" stop-color="#02030A" />
+    </linearGradient>
+    <linearGradient id="neon" x1="176" y1="120" x2="1024" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5EFCE8" />
+      <stop offset="0.5" stop-color="#7367F0" />
+      <stop offset="1" stop-color="#00FFA3" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.75 0" result="soft" />
+      <feMerge>
+        <feMergeNode in="soft" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <circle cx="180" cy="160" r="112" fill="#18F3D3" fill-opacity="0.08" filter="url(#glow)" />
+  <circle cx="1020" cy="110" r="128" fill="#8B5CF6" fill-opacity="0.1" filter="url(#glow)" />
+  <circle cx="1020" cy="520" r="168" fill="#00FFA3" fill-opacity="0.07" filter="url(#glow)" />
+  <path d="M150 108H1050" stroke="url(#neon)" stroke-width="2" stroke-opacity="0.45" />
+  <path d="M150 522H1050" stroke="url(#neon)" stroke-width="2" stroke-opacity="0.45" />
+  <rect x="150" y="138" width="900" height="354" rx="34" fill="#0B1228" fill-opacity="0.8" stroke="url(#neon)" stroke-opacity="0.5" />
+  <rect x="190" y="178" width="146" height="56" rx="18" fill="#111A3D" stroke="url(#neon)" stroke-opacity="0.7" />
+  <text x="224" y="214" fill="#EAFBFF" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="3">NEON NOTES</text>
+  <text x="190" y="290" fill="#F8FBFF" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="700">Futuristic notes</text>
+  <text x="190" y="352" fill="#9FB2D6" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="400">Capture ideas, drafts, reminders, and structured writing in one searchable space.</text>
+  <text x="190" y="412" fill="#59F5E3" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700">Private • Organized • Searchable • Neon</text>
+  <rect x="884" y="178" width="126" height="126" rx="30" fill="#091126" stroke="#5EFCE8" stroke-opacity="0.65" />
+  <path d="M915 223H979" stroke="#5EFCE8" stroke-width="8" stroke-linecap="round" />
+  <path d="M915 253H965" stroke="#7367F0" stroke-width="8" stroke-linecap="round" />
+  <path d="M915 283H951" stroke="#00FFA3" stroke-width="8" stroke-linecap="round" />
+</svg>
