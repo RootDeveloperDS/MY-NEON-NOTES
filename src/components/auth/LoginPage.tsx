@@ -28,8 +28,8 @@ const formSchema = z.object({
 });
 
 export function LoginPage() {
-  const [loading, setLoading] = useState<false | 'google' | 'email'>(false);
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const [loading, setLoading] = useState<false | 'google' | 'email' | 'reset'>(false);
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
   const { toast } = useToast();
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -58,6 +58,24 @@ export function LoginPage() {
       }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    const email = form.getValues('email').trim();
+    if (!email) {
+      toast({ variant: 'destructive', title: 'Missing Email', description: 'Enter your email to reset your password.' });
+      return;
+    }
+
+    setLoading('reset');
+    try {
+      await resetPassword(email);
+      toast({ title: 'Password Reset Sent', description: 'Check your inbox for the reset link.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Reset Error', description: error.message });
+    } finally {
       setLoading(false);
     }
   };
@@ -92,6 +110,17 @@ export function LoginPage() {
               <form>
                 <TabsContent value="signin" className="space-y-4 pt-4">
                   <AuthFormFields form={form} />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto p-0 text-xs"
+                      onClick={handlePasswordReset}
+                      disabled={!!loading}
+                    >
+                      Reset password
+                    </Button>
+                  </div>
                   <Button 
                     onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))} 
                     disabled={!!loading} 
