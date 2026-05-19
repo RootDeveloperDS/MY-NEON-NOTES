@@ -15,9 +15,16 @@ const resolveLanguage = (language: DetectedLanguage) => (language === 'unknown' 
 
 let prismReadyPromise: Promise<void> | null = null;
 
+const ensurePrismGlobal = () => {
+  if (typeof globalThis !== 'undefined') {
+    (globalThis as typeof globalThis & { Prism?: typeof Prism }).Prism = Prism;
+  }
+};
+
 const loadPrismLanguages = () => {
   if (!prismReadyPromise) {
     prismReadyPromise = (async () => {
+      ensurePrismGlobal();
       await import('prismjs/components/prism-clike');
       await import('prismjs/components/prism-javascript');
       await import('prismjs/components/prism-python');
@@ -37,9 +44,8 @@ export function NoteCodeBlock({ content, language, className }: NoteCodeBlockPro
 
     loadPrismLanguages()
       .then(() => {
-        if (isActive) {
-          setIsReady(true);
-        }
+        if (!isActive) return;
+        setIsReady(Boolean(Prism.languages?.clike));
       })
       .catch(() => {
         if (isActive) {
