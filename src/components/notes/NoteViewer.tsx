@@ -1,10 +1,13 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { Note } from '@/lib/types';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Copy, FilePenLine, Trash2 } from 'lucide-react';
+import { detectCodeBlock } from '@/lib/code-detect';
+import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
 
 interface NoteViewerProps {
   note: Note;
@@ -17,6 +20,7 @@ interface NoteViewerProps {
 export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewerProps) {
   const createdAt = note.createdAt ? format(note.createdAt.toDate(), 'PPp') : 'Unknown';
   const updatedAt = note.updatedAt ? format(note.updatedAt.toDate(), 'PPp') : 'Unknown';
+  const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
 
   return (
     <Card className="flex h-full flex-col border-primary/40 bg-card/80 shadow-[0_0_20px_hsl(var(--primary)/0.2)] backdrop-blur-sm">
@@ -61,9 +65,13 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto p-5">
-        <pre className="whitespace-pre-wrap break-words font-note text-sm leading-7 text-foreground">
-          {note.content}
-        </pre>
+        {codeDetection.isCode ? (
+          <NoteCodeBlock content={note.content} language={codeDetection.language} />
+        ) : (
+          <pre className="whitespace-pre-wrap break-words font-note text-sm leading-7 text-foreground">
+            {note.content}
+          </pre>
+        )}
       </CardContent>
     </Card>
   );

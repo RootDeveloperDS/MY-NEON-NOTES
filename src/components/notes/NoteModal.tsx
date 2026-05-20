@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
+import { detectCodeBlock, type DetectedLanguage } from '@/lib/code-detect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
 
 const noteFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
@@ -27,6 +29,13 @@ interface NoteModalProps {
   onClose: () => void;
   note: Note | null;
 }
+
+const languageLabels: Record<DetectedLanguage, string> = {
+  javascript: 'JavaScript',
+  python: 'Python',
+  cpp: 'C++',
+  unknown: 'Code',
+};
 
 export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
   const { toast } = useToast();
@@ -53,6 +62,18 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
       });
     }
   }, [note, form, isOpen]);
+
+  const contentValue = form.watch('content') ?? '';
+  const [codeDetection, setCodeDetection] = useState(() => detectCodeBlock(contentValue));
+  const showCodePreview = codeDetection.isCode && contentValue.trim().length > 0;
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setCodeDetection(detectCodeBlock(contentValue));
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [contentValue]);
   
   const isSubmitting = form.formState.isSubmitting;
 
@@ -123,12 +144,27 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
               control={form.control}
               name="content"
               render={({ field }) => (
-                <FormItem className="flex-grow flex flex-col">
+                <FormItem className="flex-grow flex flex-col space-y-3">
                   <FormLabel>Content</FormLabel>
                   <FormControl>
                     <Textarea placeholder="Type your note here..." className="min-h-[200px] font-note flex-grow resize-none" {...field} />
                   </FormControl>
                   <FormMessage />
+                  {showCodePreview && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-primary/80">
+                        <span className="font-semibold">Code detected</span>
+                        <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[10px] text-primary">
+                          {languageLabels[codeDetection.language]}
+                        </span>
+                      </div>
+                      <NoteCodeBlock
+                        content={contentValue}
+                        language={codeDetection.language}
+                        className="max-h-64 overflow-y-auto"
+                      />
+                    </div>
+                  )}
                 </FormItem>
               )}
             />

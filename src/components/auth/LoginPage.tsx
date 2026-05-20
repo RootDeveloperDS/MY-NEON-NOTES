@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from 'lucide-react';
 
@@ -28,9 +30,11 @@ const formSchema = z.object({
 });
 
 export function LoginPage() {
-  const [loading, setLoading] = useState<false | 'google' | 'email'>(false);
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const [loading, setLoading] = useState<false | 'google' | 'email' | 'reset'>(false);
+  const [isPersistent, setIsPersistent] = useState(false);
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
   const { toast } = useToast();
+  const persistenceMode = isPersistent ? 'persistent' : 'temporary';
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,7 +44,7 @@ export function LoginPage() {
   const handleGoogleSignIn = async () => {
     setLoading('google');
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(persistenceMode);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Sign-in Error', description: error.message });
       setLoading(false);
@@ -51,13 +55,31 @@ export function LoginPage() {
     setLoading('email');
     try {
       if (action === 'signIn') {
-        await signInWithEmail(values.email, values.password);
+        await signInWithEmail(values.email, values.password, persistenceMode);
       } else {
-        await signUpWithEmail(values.email, values.password);
+        await signUpWithEmail(values.email, values.password, persistenceMode);
         toast({ title: 'Account Created', description: "You've been signed up successfully!" });
       }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    const email = form.getValues('email').trim();
+    if (!email) {
+      toast({ variant: 'destructive', title: 'Missing Email', description: 'Enter your email to reset your password.' });
+      return;
+    }
+
+    setLoading('reset');
+    try {
+      await resetPassword(email);
+      toast({ title: 'Password Reset Sent', description: 'Check your inbox for the reset link.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Reset Error', description: error.message });
+    } finally {
       setLoading(false);
     }
   };
@@ -92,6 +114,18 @@ export function LoginPage() {
               <form>
                 <TabsContent value="signin" className="space-y-4 pt-4">
                   <AuthFormFields form={form} />
+                  <SessionToggle isPersistent={isPersistent} onChange={setIsPersistent} />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto p-0 text-xs"
+                      onClick={handlePasswordReset}
+                      disabled={!!loading}
+                    >
+                      Reset password
+                    </Button>
+                  </div>
                   <Button 
                     onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))} 
                     disabled={!!loading} 
@@ -103,6 +137,7 @@ export function LoginPage() {
 
                 <TabsContent value="signup" className="space-y-4 pt-4">
                   <AuthFormFields form={form} />
+                  <SessionToggle isPersistent={isPersistent} onChange={setIsPersistent} />
                   <Button 
                     onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))} 
                     disabled={!!loading} 
@@ -165,4 +200,39 @@ function AuthFormFields({ form }: { form: any }) {
             />
         </>
     )
+}
+
+function SessionToggle({
+  isPersistent,
+  onChange,
+}: {
+  isPersistent: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  const toggleId = 'session-toggle';
+
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-cyan-400/40 bg-cyan-400/10 px-3 py-2 shadow-[0_0_18px_rgba(34,211,238,0.35)] backdrop-blur-md">
+      <div className="space-y-1">
+        <Label htmlFor={toggleId} className="text-[11px] uppercase tracking-[0.28em] text-cyan-200">
+          Session Mode
+        </Label>
+        <p className="text-xs text-cyan-100/70">
+          {isPersistent
+            ? 'Persistent session (stored on this device)'
+            : 'Temporary session (clears when tab closes)'}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-semibold text-cyan-200/70">TEMP</span>
+        <Switch
+          id={toggleId}
+          checked={isPersistent}
+          onCheckedChange={onChange}
+          className="border border-cyan-300/60 bg-cyan-500/10 shadow-[0_0_12px_rgba(34,211,238,0.55)] data-[state=checked]:bg-cyan-400/70"
+        />
+        <span className="text-[10px] font-semibold text-cyan-100">PERSIST</span>
+      </div>
+    </div>
+  );
 }
