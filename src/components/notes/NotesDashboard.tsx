@@ -173,14 +173,15 @@ export function NotesDashboard() {
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
                 {filteredNotes.map((note) => (
-                  <NoteCard
-                    key={note.id}
-                    note={note}
-                    onView={() => handleViewNote(note)}
-                    onEdit={() => handleOpenModal(note)}
-                  />
+                  <div key={note.id} className="break-inside-avoid mb-6 w-full transform-gpu">
+                    <NoteCard
+                      note={note}
+                      onView={() => handleViewNote(note)}
+                      onEdit={() => handleOpenModal(note)}
+                    />
+                  </div>
                 ))}
               </div>
             </div>

@@ -28,6 +28,7 @@ const loadPrismLanguages = () => {
       await import('prismjs/components/prism-clike');
       await import('prismjs/components/prism-javascript');
       await import('prismjs/components/prism-python');
+      await import('prismjs/components/prism-c');
       await import('prismjs/components/prism-cpp');
       await import('prismjs/components/prism-java');
     })();
