@@ -10,6 +10,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  setPersistence,
+  browserSessionPersistence,
+  browserLocalPersistence,
   User
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -111,7 +114,20 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  const applyPersistence = async (persistence: TokenPersistence) => {
+    if (typeof window !== 'undefined') {
+      if (persistence === 'temporary') {
+        sessionStorage.setItem('neon_auth_persistence', 'temporary');
+      } else {
+        sessionStorage.removeItem('neon_auth_persistence');
+      }
+    }
+    const firebasePersistence = persistence === 'temporary' ? browserSessionPersistence : browserLocalPersistence;
+    await setPersistence(auth, firebasePersistence);
+  };
+
   const signInWithGoogle = async (persistence: TokenPersistence) => {
+    await applyPersistence(persistence);
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const token = await result.user.getIdToken();
@@ -130,6 +146,7 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   };
   
   const signUpWithEmail = async (email: string, password: string, persistence: TokenPersistence) => {
+    await applyPersistence(persistence);
     const result = await createUserWithEmailAndPassword(auth, email, password);
     const token = await result.user.getIdToken();
     const storageResult = storeAuthToken(token, persistence);
@@ -143,6 +160,7 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   };
   
   const signInWithEmail = async (email: string, password: string, persistence: TokenPersistence) => {
+    await applyPersistence(persistence);
     const result = await signInWithEmailAndPassword(auth, email, password);
     const token = await result.user.getIdToken();
     const storageResult = storeAuthToken(token, persistence);
@@ -178,6 +196,11 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!activeUid) {
       return;
+    }
+
+    const isTemporary = typeof window !== 'undefined' && sessionStorage.getItem('neon_auth_persistence') === 'temporary';
+    if (!isTemporary && !isUrlAuth) {
+      return; // Do not run idle logout for persistent sessions.
     }
 
     const idleTimeoutMs = getIdleTimeoutMs();
