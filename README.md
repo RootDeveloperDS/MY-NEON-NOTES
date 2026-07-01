@@ -1,11 +1,51 @@
 # 🌌 Neon Notes
 
-**Neon Notes** is a futuristic, note-taking web app designed with a sleek, cyberpunk-inspired aesthetic & dark neon-cyan glassmorphism UI.  
-It is built for **secure coding sessions**, **fast note capture**, and **cross-device access**.
+<div align="center">
+
+[![MIT License](https://img.shields.io/github/license/RootDeveloperDS/MY-NEON-NOTES?style=flat-square&color=blue)](https://github.com/RootDeveloperDS/MY-NEON-NOTES/blob/main/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/RootDeveloperDS/MY-NEON-NOTES?style=flat-square&color=FFD700&logo=github)](https://github.com/RootDeveloperDS/MY-NEON-NOTES/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/RootDeveloperDS/MY-NEON-NOTES?style=flat-square&color=8c52ff&logo=github)](https://github.com/RootDeveloperDS/MY-NEON-NOTES/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/RootDeveloperDS/MY-NEON-NOTES?style=flat-square&color=FF4B4B)](https://github.com/RootDeveloperDS/MY-NEON-NOTES/issues)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-10-orange?style=flat-square&logo=firebase)](https://firebase.google.com/)
+
+*A zero-trust, cyberpunk-inspired cloud notebook built for developers using shared computers.*
+
+</div>
 
 <br />
 
-![Neon Notes Dashboard](https://i.imgur.com/ggyaWOM.png)
+![Neon Notes Dashboard](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/dashboard-v1.png)
+
+---
+
+## 🌐 Live Demo
+
+**[Try Neon Notes Live](https://neon-notes.vercel.app/)**
+
+---
+
+## ✨ Why Neon Notes?
+
+Unlike traditional note-taking apps, Neon Notes is designed around public computer security.
+
+✔ **Zero-trust session model**  
+✔ **Fast code snippet workflow**  
+✔ **Auto logout protection**  
+✔ **Cloud synchronization**  
+✔ **Developer-first interface**  
+✔ **Futuristic cyberpunk design**
+
+---
+
+## 💡 Design Philosophy
+
+Neon Notes is built around one principle:
+
+*"Your primary account should never be the price you pay for quickly saving code."*
+
+The application assumes every shared computer is untrusted and prioritizes secure, frictionless note-taking for developers.
 
 ---
 
@@ -21,6 +61,67 @@ It is built for **secure coding sessions**, **fast note capture**, and **cross-d
 
 ---
 
+## 🛡 Security
+
+- Zero-trust authentication
+- Public computer mode
+- Trusted device mode
+- Session isolation
+- Idle timeout
+- Firebase Authentication
+- Firestore Security Rules
+
+---
+
+## 📸 Screenshots
+
+*(Replace with actual screenshot URLs when ready)*
+
+- **Login Page**: `[Add Image]`
+- **Dashboard**: ![Dashboard](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/dashboard-v1.png)
+- **Note Editor**: `[Add Image]`
+- **Mobile View**: `[Add Image]`
+- **Syntax Highlighting**: `[Add Image]`
+- **Settings**: `[Add Image]`
+
+---
+
+## 🏗 Architecture
+
+```text
+Browser
+   │
+   ▼
+Next.js
+   │
+   ▼
+Firebase Authentication
+   │
+   ▼
+Firestore
+```
+
+---
+
+## 🚧 Roadmap
+
+- [x] Authentication
+- [x] Cloud Sync
+- [x] Syntax Highlighting
+- [x] Mobile Responsive
+
+**Upcoming**
+- [ ] Markdown Preview
+- [ ] File Attachments
+- [ ] Folder Organization
+- [ ] AI Note Summaries
+- [ ] Offline Mode (PWA)
+- [ ] Tags & Search
+- [ ] Version History
+- [ ] Keyboard Shortcuts
+
+---
+
 ## 1) The Origin & Motive
 
 Neon Notes exists to solve a real security and UX problem in college computer labs.
@@ -28,7 +129,6 @@ Neon Notes exists to solve a real security and UX problem in college computer la
 Students often need to save programming code quickly, but logging into a **primary Google/Gmail account on shared public hardware** is risky and inefficient.
 
 Neon Notes fixes this by offering:
-
 - an **isolated, low-risk login boundary**
 - a **fast note workspace** for coding sessions
 - a practical way to save snippets instantly without exposing primary accounts
@@ -98,7 +198,7 @@ npm install
 ```
 
 ### 3. Configure environment
-Create `/home/runner/work/MY-NEON-NOTES/MY-NEON-NOTES/.env.local`:
+Create `.env.local`:
 
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
@@ -114,7 +214,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
 npm run dev
 ```
 
-Open: **http://localhost:9002**
+Open: **http://localhost:3000**
 
 ### Useful scripts
 ```bash
@@ -160,6 +260,12 @@ Contributions are welcome and appreciated.
 4. Open a Pull Request with clear context
 
 Please keep changes focused, tested, and easy to review.
+
+---
+
+## 📜 License
+
+MIT License
 
 ---
 
