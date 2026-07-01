@@ -13,10 +13,18 @@ interface NotesHeaderProps {
 
 export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
   return (
-    <header className="flex flex-col items-center justify-between gap-4 md:flex-row">
-      <h1 className="font-headline text-4xl text-primary drop-shadow-[0_0_5px_hsl(var(--primary))]">
-        Neon Notes
-      </h1>
+    <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      {/* Title & Mobile Profile Row */}
+      <div className="flex w-full items-center justify-between md:w-auto">
+        <h1 className="font-headline text-4xl text-primary drop-shadow-[0_0_5px_hsl(var(--primary))]">
+          Neon Notes
+        </h1>
+        <div className="block md:hidden">
+          <UserProfile />
+        </div>
+      </div>
+      
+      {/* Actions Row */}
       <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:flex-nowrap">
         <div className="relative w-full sm:flex-1 md:w-64 md:flex-none md:focus-within:w-80 transition-all duration-300 ease-in-out group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
@@ -47,7 +55,9 @@ export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
             <ExternalLink className="h-3.5 w-3.5 opacity-80" />
           </Link>
         </Button>
-        <UserProfile />
+        <div className="hidden md:block">
+          <UserProfile />
+        </div>
       </div>
     </header>
   );
