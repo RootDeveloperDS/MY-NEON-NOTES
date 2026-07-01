@@ -2,16 +2,16 @@
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, LogOut, Settings, Github, ExternalLink } from 'lucide-react';
+import { Search, Github, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { UserProfile } from '@/components/auth/UserProfile';
 
 interface NotesHeaderProps {
   onSearchChange: (term: string) => void;
-  onLogout: () => void;
-  showSettings: boolean;
+  showSettings?: boolean;
 }
 
-export function NotesHeader({ onSearchChange, onLogout, showSettings }: NotesHeaderProps) {
+export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
   return (
     <header className="flex flex-col items-center justify-between gap-4 md:flex-row">
       <h1 className="font-headline text-4xl text-primary drop-shadow-[0_0_5px_hsl(var(--primary))]">
@@ -30,7 +30,7 @@ export function NotesHeader({ onSearchChange, onLogout, showSettings }: NotesHea
         <Button
           asChild
           variant="outline"
-          className="h-11 w-full border-primary/60 bg-card/70 px-3 text-primary shadow-[0_0_12px_hsl(var(--primary)/0.2)] transition-all duration-300 hover:border-primary hover:bg-card hover:shadow-[0_0_18px_hsl(var(--primary)/0.45)] sm:w-auto"
+          className="h-11 w-full border-primary/60 bg-card/70 px-3 text-primary shadow-[0_0_12px_hsl(var(--primary)/0.2)] transition-all duration-300 hover:border-primary hover:bg-card hover:shadow-[0_0_18px_hsl(var(--primary)/0.45)] sm:w-auto mr-2"
         >
           <Link
             href="https://github.com/RootDeveloperDS/MY-NEON-NOTES/"
@@ -44,17 +44,7 @@ export function NotesHeader({ onSearchChange, onLogout, showSettings }: NotesHea
             <ExternalLink className="h-3.5 w-3.5 opacity-80" />
           </Link>
         </Button>
-        {showSettings && (
-          <Button asChild variant="ghost" size="icon" aria-label="System Status" className="hidden"> 
-          {/*Setting Button is now hidden by default*/}
-            <Link href="/status">
-              <Settings className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-            </Link>
-          </Button>
-        )}
-        <Button variant="ghost" size="icon" onClick={onLogout} aria-label="Logout">
-          <LogOut className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-        </Button>
+        <UserProfile />
       </div>
     </header>
   );

@@ -152,8 +152,6 @@ export function NotesDashboard() {
     <div className={`relative min-h-screen p-4 md:p-8 ${dashboardBottomSpacingClass}`}>
       <NotesHeader
         onSearchChange={setSearchTerm}
-        onLogout={logout}
-        showSettings={!isUrlAuth}
       />
 
       {loading ? (
