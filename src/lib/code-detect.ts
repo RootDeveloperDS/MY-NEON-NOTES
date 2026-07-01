@@ -1,4 +1,4 @@
-export type DetectedLanguage = 'javascript' | 'python' | 'cpp' | 'unknown';
+export type DetectedLanguage = 'javascript' | 'python' | 'cpp' | 'java' | 'unknown';
 
 export interface CodeDetectionResult {
   isCode: boolean;
@@ -6,7 +6,7 @@ export interface CodeDetectionResult {
   score: number;
 }
 
-const LANGUAGE_PATTERNS: Record<'javascript' | 'python' | 'cpp', RegExp[]> = {
+const LANGUAGE_PATTERNS: Record<'javascript' | 'python' | 'cpp' | 'java', RegExp[]> = {
   javascript: [
     /\bconst\b/g,
     /\blet\b/g,
@@ -43,6 +43,15 @@ const LANGUAGE_PATTERNS: Record<'javascript' | 'python' | 'cpp', RegExp[]> = {
     /\bclass\s+\w+/g,
     /->/g,
   ],
+  java: [
+    /\bpublic\s+class\b/g,
+    /\bimport\s+java\./g,
+    /\bSystem\.out\.print/g,
+    /\bString\b/g,
+    /\bpublic\s+static\s+void\s+main\b/g,
+    /\bextends\b/g,
+    /\bimplements\b/g,
+  ],
 };
 
 const STRONG_SIGNALS: RegExp[] = [
@@ -51,6 +60,7 @@ const STRONG_SIGNALS: RegExp[] = [
   /\bconsole\.log\b/,
   /\bfunction\s+\w+/,
   /^\s*class\s+\w+/m,
+  /\bpublic\s+class\b/,
 ];
 
 const FENCE_PATTERN = /```/;
@@ -77,9 +87,10 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
     javascript: scoreText(normalized, LANGUAGE_PATTERNS.javascript),
     python: scoreText(normalized, LANGUAGE_PATTERNS.python),
     cpp: scoreText(normalized, LANGUAGE_PATTERNS.cpp),
+    java: scoreText(normalized, LANGUAGE_PATTERNS.java),
   };
 
-  const entries = Object.entries(scores) as Array<['javascript' | 'python' | 'cpp', number]>;
+  const entries = Object.entries(scores) as Array<['javascript' | 'python' | 'cpp' | 'java', number]>;
   let bestLanguage: DetectedLanguage = 'unknown';
   let maxScore = 0;
 

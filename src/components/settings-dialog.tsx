@@ -49,7 +49,8 @@ export function SettingsDialog({ children, open, onOpenChange }: SettingsDialogP
                   <SelectValue placeholder="Select a theme" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="legacy">Legacy Theme (Default)</SelectItem>
+                  <SelectItem value="cyberpunk">Cyberpunk (Default)</SelectItem>
+                  <SelectItem value="legacy">Legacy Theme</SelectItem>
                 </SelectContent>
               </Select>
             </div>

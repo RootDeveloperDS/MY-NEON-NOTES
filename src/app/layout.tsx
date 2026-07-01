@@ -29,9 +29,9 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="legacy"
+          defaultTheme="cyberpunk"
           enableSystem={false}
-          themes={['legacy']}
+          themes={['legacy', 'cyberpunk']}
         >
           <AuthProvider>
             {children}
