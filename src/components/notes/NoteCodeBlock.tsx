@@ -25,12 +25,20 @@ const loadPrismLanguages = () => {
   if (!prismReadyPromise) {
     prismReadyPromise = (async () => {
       ensurePrismGlobal();
+      await import('prismjs/components/prism-markup');
+      await import('prismjs/components/prism-markup-templating');
       await import('prismjs/components/prism-clike');
       await import('prismjs/components/prism-javascript');
+      await import('prismjs/components/prism-typescript');
       await import('prismjs/components/prism-python');
       await import('prismjs/components/prism-c');
       await import('prismjs/components/prism-cpp');
       await import('prismjs/components/prism-java');
+      await import('prismjs/components/prism-csharp');
+      await import('prismjs/components/prism-go');
+      await import('prismjs/components/prism-rust');
+      await import('prismjs/components/prism-php');
+      await import('prismjs/components/prism-ruby');
     })();
   }
 

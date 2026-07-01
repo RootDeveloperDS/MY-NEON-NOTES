@@ -39,7 +39,7 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
                 Back
               </Button>
             )}
-            <CardTitle className="font-note text-2xl text-primary break-words [overflow-wrap:anywhere]">{note.title}</CardTitle>
+            <CardTitle className="font-sans font-bold text-2xl text-primary break-words [overflow-wrap:anywhere]">{note.title}</CardTitle>
             <CardDescription className="text-xs leading-relaxed">
               <span className="block">Created: {createdAt}</span>
               <span className="block">Updated: {updatedAt}</span>

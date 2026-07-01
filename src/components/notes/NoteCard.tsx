@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import type { Note } from '@/lib/types';
-import { formatDistanceToNow } from 'date-fns';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { FilePenLine, Trash2, Copy, FileCode2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -67,9 +66,15 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   
   const languageLabels: Record<string, string> = {
     javascript: 'JavaScript',
+    typescript: 'TypeScript',
     python: 'Python',
     cpp: 'C++',
     java: 'Java',
+    csharp: 'C#',
+    go: 'Go',
+    rust: 'Rust',
+    php: 'PHP',
+    ruby: 'Ruby',
     unknown: '',
   };
 
@@ -77,52 +82,57 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
 
   return (
     <>
-      <Card
+      <div
         onClick={onView}
-        className="flex flex-col h-full border-primary/20 bg-card/80 transition-all duration-300 ease-in-out hover:border-primary/60 hover:-translate-y-1.5 hover:shadow-[0_10px_30px_-15px_hsl(var(--primary)/0.5)] cursor-pointer"
+        className="group relative flex flex-col w-full border border-primary/20 bg-card/60 hover:bg-card/90 transition-all duration-300 rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)] hover:-translate-y-1"
       >
-        <CardHeader className="p-6 pb-4">
-        <div className="flex justify-between items-start gap-3">
-          {/* Title + Description */}
-          <div className="flex-1 min-w-[0]">
-            <CardTitle className="font-note text-xl text-primary break-words whitespace-normal leading-tight">{note.title}</CardTitle>
-            <CardDescription className="opacity-70 flex flex-wrap items-center gap-2 mt-1.5">
-              <span>{relativeTime}</span>
-              {codeDetection.isCode && codeDetection.language !== 'unknown' && (
-                <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary shadow-sm">
-                  <FileCode2 className="h-3 w-3" />
-                  {languageLabels[codeDetection.language]}
-                </span>
-              )}
-            </CardDescription>
+        {/* Top Accent line */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary/30 group-hover:bg-primary transition-colors duration-500 shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
+
+        <div className="p-5 flex-grow flex flex-col">
+          {/* Header row with date & language */}
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
+              {relativeTime}
+            </span>
+            {codeDetection.isCode && codeDetection.language !== 'unknown' && (
+              <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wider shadow-sm">
+                <FileCode2 className="h-2.5 w-2.5" />
+                {languageLabels[codeDetection.language]}
+              </span>
+            )}
           </div>
-          {/* Buttons */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEditClick} aria-label="Edit note">
-              <FilePenLine className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyClick} aria-label="Copy note content">
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/80 hover:text-destructive" onClick={handleDeleteClick} aria-label="Delete note">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+
+          {/* Title */}
+          <h3 className="font-sans font-semibold text-lg md:text-xl text-primary break-words whitespace-normal leading-tight mb-3 group-hover:drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)] transition-all duration-300">
+            {note.title}
+          </h3>
+
+          {/* Preview content (Code or Text) */}
+          <div className="flex-grow">
+            {codeDetection.isCode ? (
+              <div className="max-h-48 overflow-hidden rounded-md relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-12 after:bg-gradient-to-t after:from-background after:to-transparent pointer-events-none shadow-inner border border-primary/10">
+                <NoteCodeBlock content={note.content} language={codeDetection.language} className="!p-3 !m-0 text-[10px] md:text-[11px]" />
+              </div>
+            ) : (
+              <p className="font-note text-muted-foreground text-sm line-clamp-6 leading-relaxed opacity-90">{note.content}</p>
+            )}
           </div>
         </div>
-        </CardHeader>
-        <CardContent className="flex-grow p-6 pt-0">
-          {codeDetection.isCode ? (
-            <div className="max-h-32 overflow-hidden rounded-md relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-8 after:bg-gradient-to-t after:from-background after:to-transparent">
-              <NoteCodeBlock content={note.content} language={codeDetection.language} className="!p-3 !m-0 text-[11px]" />
-            </div>
-          ) : (
-            <p className="font-note text-muted-foreground line-clamp-4">{note.content}</p>
-          )}
-        </CardContent>
-        <CardFooter className="px-6 pb-4 pt-0">
-          {/* Future tags can go here */}
-        </CardFooter>
-      </Card>
+
+        {/* Footer actions panel (fades in on hover) */}
+        <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-primary/10 bg-primary/5 opacity-80 md:opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleEditClick} aria-label="Edit note">
+            <FilePenLine className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleCopyClick} aria-label="Copy note content">
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={handleDeleteClick} aria-label="Delete note">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

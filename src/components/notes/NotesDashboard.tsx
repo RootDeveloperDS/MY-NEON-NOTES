@@ -32,6 +32,22 @@ export function NotesDashboard() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [isViewerDeleteDialogOpen, setIsViewerDeleteDialogOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [cols, setCols] = useState(1);
+
+  useEffect(() => {
+    setMounted(true);
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width >= 1280) setCols(4);
+      else if (width >= 1024) setCols(3);
+      else if (width >= 640) setCols(2);
+      else setCols(1);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (authLoading) {
@@ -84,6 +100,14 @@ export function NotesDashboard() {
         note.content.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [notes, searchTerm]);
+
+  const masonryColumns = useMemo(() => {
+    const result: Note[][] = Array.from({ length: cols }, () => []);
+    filteredNotes.forEach((note, index) => {
+      result[index % cols].push(note);
+    });
+    return result;
+  }, [filteredNotes, cols]);
 
   const latestViewingNote = useMemo(() => {
     if (!viewingNote) return null;
@@ -173,17 +197,33 @@ export function NotesDashboard() {
                   </div>
                 </div>
               )}
-              <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
-                {filteredNotes.map((note) => (
-                  <div key={note.id} className="break-inside-avoid mb-6 w-full transform-gpu">
+              {!mounted ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredNotes.map((note) => (
                     <NoteCard
+                      key={note.id}
                       note={note}
                       onView={() => handleViewNote(note)}
                       onEdit={() => handleOpenModal(note)}
                     />
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+                  {masonryColumns.map((colNotes, colIdx) => (
+                    <div key={colIdx} className="flex flex-col gap-6">
+                      {colNotes.map((note) => (
+                        <NoteCard
+                          key={note.id}
+                          note={note}
+                          onView={() => handleViewNote(note)}
+                          onEdit={() => handleOpenModal(note)}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
               <div className={`mt-8 transition-all duration-300 lg:grid ${splitViewMinHeightClass} ${splitViewGridClass} lg:gap-5`}>
