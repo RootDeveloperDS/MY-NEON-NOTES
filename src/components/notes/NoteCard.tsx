@@ -73,7 +73,7 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
     unknown: '',
   };
 
-  const relativeTime = note.updatedAt ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true }) : 'just now';
+  const relativeTime = note.updatedAt ? formatDistanceToNow(note.updatedAt.toDate()).replace('about ', '').trim() : 'just now';
 
   return (
     <>
@@ -82,20 +82,22 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
         className="flex flex-col h-full border-primary/20 bg-card/80 transition-all duration-300 ease-in-out hover:border-primary/60 hover:-translate-y-1.5 hover:shadow-[0_10px_30px_-15px_hsl(var(--primary)/0.5)] cursor-pointer"
       >
         <CardHeader className="p-6 pb-4">
-        <div className="flex flex-wrap justify-between items-start gap-2">
+        <div className="flex justify-between items-start gap-3">
           {/* Title + Description */}
           <div className="flex-1 min-w-[0]">
-            <CardTitle className="font-note text-xl text-primary truncate">{note.title}</CardTitle>
-            <CardDescription className="opacity-70">{relativeTime}</CardDescription>
+            <CardTitle className="font-note text-xl text-primary break-words whitespace-normal leading-tight">{note.title}</CardTitle>
+            <CardDescription className="opacity-70 flex flex-wrap items-center gap-2 mt-1.5">
+              <span>{relativeTime}</span>
+              {codeDetection.isCode && codeDetection.language !== 'unknown' && (
+                <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary shadow-sm">
+                  <FileCode2 className="h-3 w-3" />
+                  {languageLabels[codeDetection.language]}
+                </span>
+              )}
+            </CardDescription>
           </div>
           {/* Buttons */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            {codeDetection.isCode && codeDetection.language !== 'unknown' && (
-              <span className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary shadow-[0_0_8px_hsl(var(--primary)/0.2)] mr-2">
-                <FileCode2 className="h-3 w-3" />
-                {languageLabels[codeDetection.language]}
-              </span>
-            )}
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEditClick} aria-label="Edit note">
               <FilePenLine className="h-4 w-4" />
             </Button>
