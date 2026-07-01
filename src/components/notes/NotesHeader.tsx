@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Github, ExternalLink } from 'lucide-react';
@@ -12,6 +13,28 @@ interface NotesHeaderProps {
 }
 
 export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [kbdShortcut, setKbdShortcut] = useState('Ctrl');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
+      setKbdShortcut(isMac ? '⌘' : 'Ctrl');
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       {/* Title & Mobile Profile Row */}
@@ -29,13 +52,19 @@ export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
         <div className="relative w-full sm:flex-1 md:w-64 md:flex-none md:focus-within:w-80 transition-all duration-300 ease-in-out group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
           <Input
+            ref={inputRef}
             type="search"
             placeholder="Search notes..."
             className="pl-10 pr-16 h-11 focus-visible:ring-primary/50 focus-visible:shadow-[0_0_15px_hsl(var(--primary)/0.3)] transition-all duration-300"
             onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                inputRef.current?.blur();
+              }
+            }}
           />
           <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden h-6 select-none items-center gap-1 rounded border border-primary/20 bg-muted/30 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 md:flex group-focus-within:border-primary/50 group-focus-within:text-primary/70">
-            <span className="text-[10px]">Ctrl</span>K
+            <span className="text-[10px]">{kbdShortcut}</span>K
           </kbd>
         </div>
         <Button
