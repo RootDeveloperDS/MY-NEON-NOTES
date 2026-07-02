@@ -16,7 +16,7 @@ import {
   User
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { clearStoredAuthTokens, getAuthTokenStorageState, storeAuthToken, type TokenPersistence } from '@/lib/auth-token';
+export type TokenPersistence = 'temporary' | 'persistent';
 import { apiFetch } from '@/lib/api-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from './use-toast';
@@ -129,48 +129,17 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   const signInWithGoogle = async (persistence: TokenPersistence) => {
     await applyPersistence(persistence);
     const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const token = await result.user.getIdToken();
-    const storageResult = storeAuthToken(token, persistence);
-    if (storageResult.fallbackToMemory) {
-      const storageState = getAuthTokenStorageState();
-      toast({
-        variant: 'destructive',
-        title: 'Storage blocked',
-        description: 'Browser storage is unavailable, so this session will be kept in memory only.',
-      });
-      if (storageState.sessionStorageBlocked || storageState.localStorageBlocked) {
-        console.warn('Browser storage blocked; auth token stored in memory only.');
-      }
-    }
+    await signInWithPopup(auth, provider);
   };
   
   const signUpWithEmail = async (email: string, password: string, persistence: TokenPersistence) => {
     await applyPersistence(persistence);
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    const token = await result.user.getIdToken();
-    const storageResult = storeAuthToken(token, persistence);
-    if (storageResult.fallbackToMemory) {
-      toast({
-        variant: 'destructive',
-        title: 'Storage blocked',
-        description: 'Browser storage is unavailable, so this session will be kept in memory only.',
-      });
-    }
+    await createUserWithEmailAndPassword(auth, email, password);
   };
   
   const signInWithEmail = async (email: string, password: string, persistence: TokenPersistence) => {
     await applyPersistence(persistence);
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    const token = await result.user.getIdToken();
-    const storageResult = storeAuthToken(token, persistence);
-    if (storageResult.fallbackToMemory) {
-      toast({
-        variant: 'destructive',
-        title: 'Storage blocked',
-        description: 'Browser storage is unavailable, so this session will be kept in memory only.',
-      });
-    }
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   const resetPassword = async (email: string) => {
@@ -188,7 +157,6 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
 
       await signOut(auth);
     } finally {
-      clearStoredAuthTokens();
       router.push('/');
     }
   }, [isUrlAuth, router]);
