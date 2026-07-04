@@ -13,6 +13,7 @@ import {
   setPersistence,
   browserSessionPersistence,
   browserLocalPersistence,
+  signInWithCustomToken,
   User
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -75,11 +76,17 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
           }
           return res.json();
         })
-        .then(data => {
+        .then(async data => {
           if (data.valid) {
-            setActiveUid(urlUid);
-            setIsUrlAuth(true);
-            toast({ title: 'Login Successful', description: 'Logged in using URL UID.' });
+            if (data.customToken) {
+              await signInWithCustomToken(auth, data.customToken);
+              toast({ title: 'Login Successful', description: 'Logged in securely via URL.' });
+            } else {
+              // Fallback for backwards compatibility if backend is not updated yet
+              setActiveUid(urlUid);
+              setIsUrlAuth(true);
+              toast({ title: 'Login Successful', description: 'Logged in using URL UID (Unsecured Mode).' });
+            }
           } else {
             toast({ variant: 'destructive', title: 'Invalid UID', description: 'The UID in the URL is not valid. Please log in normally.' });
             setIsUrlAuth(false);
