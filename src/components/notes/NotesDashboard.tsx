@@ -131,6 +131,7 @@ export function NotesDashboard() {
     const hasViewerContentChanged =
       latestViewingNote.title !== viewingNote.title ||
       latestViewingNote.content !== viewingNote.content ||
+      latestViewingNote.isPublic !== viewingNote.isPublic ||
       hasUpdatedAtChanged;
 
     if (hasViewerContentChanged) {

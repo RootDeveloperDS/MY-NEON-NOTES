@@ -7,4 +7,5 @@ export interface Note {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   userId: string;
+  isPublic?: boolean;
 }

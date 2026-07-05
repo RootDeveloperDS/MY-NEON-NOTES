@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { Note } from '@/lib/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { FilePenLine, Trash2, Copy, FileCode2 } from 'lucide-react';
+import { FilePenLine, Trash2, Copy, FileCode2, Globe, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -61,6 +61,33 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
     event.stopPropagation();
     setIsDeleteDialogOpen(true);
   };
+
+  const handleShareClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    try {
+      if (!note.isPublic) {
+        const { updateDoc, serverTimestamp } = await import('firebase/firestore');
+        await updateDoc(doc(db, 'notes', note.id), { isPublic: true, updatedAt: serverTimestamp() });
+        toast({
+          title: 'Note is now public!',
+          description: 'Link copied. You can toggle visibility inside the note.',
+        });
+      } else {
+        toast({
+          title: 'Link Copied',
+          description: 'Public link copied to clipboard.',
+        });
+      }
+      const shareUrl = `${window.location.origin}/shared/${note.id}`;
+      navigator.clipboard.writeText(shareUrl);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Share Error',
+        description: 'Failed to make the note public.',
+      });
+    }
+  };
   
   const codeDetection = detectCodeBlock(note.content);
   
@@ -95,12 +122,20 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
             <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
               {relativeTime}
             </span>
-            {codeDetection.isCode && codeDetection.language !== 'unknown' && (
-              <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wider shadow-sm">
-                <FileCode2 className="h-2.5 w-2.5" />
-                {languageLabels[codeDetection.language]}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {note.isPublic && (
+                <span className="flex items-center gap-1 rounded border border-green-500/30 bg-green-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-green-500 uppercase tracking-wider shadow-sm" title="Public Note">
+                  <Globe className="h-2.5 w-2.5" />
+                  Public
+                </span>
+              )}
+              {codeDetection.isCode && codeDetection.language !== 'unknown' && (
+                <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wider shadow-sm">
+                  <FileCode2 className="h-2.5 w-2.5" />
+                  {languageLabels[codeDetection.language]}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Title */}
@@ -122,6 +157,9 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
 
         {/* Footer actions panel (fades in on hover) */}
         <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-primary/10 bg-primary/5 opacity-80 md:opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleShareClick} aria-label="Share note">
+            <Share2 className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleEditClick} aria-label="Edit note">
             <FilePenLine className="h-4 w-4" />
           </Button>

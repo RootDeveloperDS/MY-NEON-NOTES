@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
@@ -20,6 +21,7 @@ import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
 const noteFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   content: z.string().min(1, 'Content is required'),
+  isPublic: z.boolean().default(false),
 });
 
 type NoteFormValues = z.infer<typeof noteFormSchema>;
@@ -41,6 +43,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
     defaultValues: {
       title: '',
       content: '',
+      isPublic: false,
     },
   });
 
@@ -49,11 +52,13 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
       form.reset({
         title: note.title,
         content: note.content,
+        isPublic: note.isPublic ?? false,
       });
     } else {
       form.reset({
         title: '',
         content: '',
+        isPublic: false,
       });
     }
   }, [note, form, isOpen]);
@@ -134,6 +139,27 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
                       <Textarea placeholder="Type your note here... (Code will be highlighted on the dashboard)" className="min-h-[250px] font-note resize-none flex-grow" {...field} />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isPublic"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border border-accent/20 bg-accent/5 p-4 shadow-sm">
+                    <div className="space-y-1">
+                      <FormLabel className="text-sm font-medium">Make Publicly Shareable</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Anyone with the link can view this note (read-only).
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="data-[state=checked]:bg-accent"
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />
