@@ -69,7 +69,7 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
       }
       
       setLoading(true);
-      apiFetch(`https://visar-backend.onrender.com/api/verify_uid?uid=${urlUid}`)
+      apiFetch(`https://visar-backend.onrender.com/api/verify_uid_return_customtoken_for_neon_notes?uid=${urlUid}`)
         .then(res => {
           if (!res.ok) {
             throw new Error('Network response was not ok');
@@ -157,18 +157,15 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      if (isUrlAuth) {
-        setIsUrlAuth(false);
-        setActiveUid(null);
-        setUser(null);
-        return;
-      }
-
+      setIsUrlAuth(false);
+      setActiveUid(null);
+      setUser(null);
       await signOut(auth);
     } finally {
-      router.push('/');
+      // Use window.location.href to force a hard reload and completely wipe any ?UID= query parameters
+      window.location.href = '/';
     }
-  }, [isUrlAuth, router]);
+  }, []);
 
   useEffect(() => {
     if (!activeUid) {
