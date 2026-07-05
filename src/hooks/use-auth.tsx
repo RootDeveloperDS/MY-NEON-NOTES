@@ -80,6 +80,8 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
           if (data.valid) {
             if (data.customToken) {
               await signInWithCustomToken(auth, data.customToken);
+              setActiveUid(urlUid);
+              setIsUrlAuth(true);
               toast({ title: 'Login Successful', description: 'Logged in securely via URL.' });
             } else {
               // Fallback for backwards compatibility if backend is not updated yet
