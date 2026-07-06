@@ -1,4 +1,4 @@
-export type DetectedLanguage = 'javascript' | 'python' | 'cpp' | 'unknown';
+export type DetectedLanguage = 'javascript' | 'python' | 'cpp' | 'java' | 'typescript' | 'csharp' | 'go' | 'rust' | 'php' | 'ruby' | 'unknown';
 
 export interface CodeDetectionResult {
   isCode: boolean;
@@ -6,51 +6,122 @@ export interface CodeDetectionResult {
   score: number;
 }
 
-const LANGUAGE_PATTERNS: Record<'javascript' | 'python' | 'cpp', RegExp[]> = {
+const LANGUAGE_PATTERNS: Record<Exclude<DetectedLanguage, 'unknown'>, RegExp[]> = {
   javascript: [
-    /\bconst\b/g,
-    /\blet\b/g,
-    /\bvar\b/g,
-    /\bfunction\b/g,
     /\bconsole\.log\b/g,
-    /\bexport\b/g,
-    /\bimport\b/g,
+    /\bdocument\./g,
+    /\bwindow\./g,
+    /\bfunction\s+\w+/g,
     /=>/g,
-    /\basync\b/g,
-    /\bawait\b/g,
-    /\bclass\b/g,
+    /\bexport\s+const\b/g,
+    /\bimport\s+.*from\s+['"]/g, // JS specific import syntax
+    /\bsetTimeout\b/g,
+  ],
+  typescript: [
+    /\binterface\s+\w+\s*\{/g,
+    /\btype\s+\w+\s*=/g,
+    /:\s*string\b/g,
+    /:\s*number\b/g,
+    /:\s*boolean\b/g,
+    /\bexport\s+interface\b/g,
+    / as \w+/g, // type assertion
   ],
   python: [
     /^\s*def\s+\w+/gm,
     /^\s*class\s+\w+/gm,
-    /\bimport\b/g,
-    /\bfrom\b/g,
+    /\bimport\s+\w+/g,
+    /\bfrom\s+\w+\s+import\b/g,
     /\bprint\s*\(/g,
     /\bself\b/g,
     /\bNone\b/g,
-    /#.+$/gm,
-    /:\s*$/gm,
+    /\bTrue\b/g,
+    /\bFalse\b/g,
+    /:\s*$/gm, // blocks ending with colon
   ],
   cpp: [
     /#include\s*[<"][^>"]+[>"]/g,
-    /\bstd::\b/g,
+    /\bstd::/g,
     /\bcout\b/g,
     /\bcin\b/g,
     /\bendl\b/g,
-    /\busing\s+namespace\s+std\b/g,
-    /\bint\s+\w+/g,
-    /\bvoid\s+\w+/g,
-    /\bclass\s+\w+/g,
+    /\bvector</g,
+    /\bint\s+main\s*\(/g,
     /->/g,
+  ],
+  java: [
+    /\bpublic\s+class\b/g,
+    /\bpublic\s+static\s+void\s+main\b/g,
+    /\bSystem\.out\.print/g,
+    /\bimport\s+java\./g,
+    /\bString\[\]\s+args\b/g,
+    /\bextends\s+\w+/g,
+    /\bimplements\s+\w+/g,
+    /@Override/g,
+  ],
+  csharp: [
+    /\busing\s+System;/g,
+    /\bnamespace\s+\w+/g,
+    /\bConsole\.WriteLine/g,
+    /\bpublic\s+class\b/g,
+    /\bget;\s*set;/g,
+    /\bTask</g,
+    /\bvar\s+\w+\s*=/g,
+  ],
+  go: [
+    /\bpackage\s+main\b/g,
+    /\bfunc\s+\w+/g,
+    /\bfmt\.Print/g,
+    /\bimport\s*\(/g,
+    /\bchan\b/g,
+    /\bgo\s+func/g,
+    /\bdefer\b/g,
+    /:\=/g,
+  ],
+  rust: [
+    /\bfn\s+\w+/g,
+    /\bprintln!/g,
+    /\buse\s+std::/g,
+    /\blet\s+mut\b/g,
+    /\bimpl\s+\w+/g,
+    /\bpub\s+struct\b/g,
+    /\bmatch\s+\w+/g,
+  ],
+  php: [
+    /<\?php/g,
+    /\$this->/g,
+    /\becho\b/g,
+    /\$_POST/g,
+    /\$_GET/g,
+    /\bfunction\b/g,
+    /=>/g,
+  ],
+  ruby: [
+    /\bdef\s+\w+/g,
+    /\bputs\b/g,
+    /\brequire\s+['"]/g,
+    /\bdo\s*\|/g,
+    /\bend\b/g,
+    /@[a-zA-Z_]+/g, // instance variables
+    /\battr_accessor\b/g,
   ],
 };
 
-const STRONG_SIGNALS: RegExp[] = [
-  /^\s*def\s+\w+/m,
-  /#include\s*[<"]/,
-  /\bconsole\.log\b/,
-  /\bfunction\s+\w+/,
-  /^\s*class\s+\w+/m,
+const STRONG_SIGNALS: { pattern: RegExp; lang: Exclude<DetectedLanguage, 'unknown'> }[] = [
+  { pattern: /<\?php/, lang: 'php' },
+  { pattern: /#include\s*[<"]/, lang: 'cpp' },
+  { pattern: /\bstd::/, lang: 'cpp' },
+  { pattern: /\bpublic\s+static\s+void\s+main/, lang: 'java' },
+  { pattern: /\bSystem\.out\.print/, lang: 'java' },
+  { pattern: /\busing\s+System;/, lang: 'csharp' },
+  { pattern: /\bConsole\.WriteLine/, lang: 'csharp' },
+  { pattern: /\bpackage\s+main\b/, lang: 'go' },
+  { pattern: /\bfmt\.Print/, lang: 'go' },
+  { pattern: /\bfn\s+main\s*\(/, lang: 'rust' },
+  { pattern: /\bprintln!/, lang: 'rust' },
+  { pattern: /^\s*def\s+\w+/m, lang: 'python' },
+  { pattern: /\bconsole\.log\b/, lang: 'javascript' },
+  { pattern: /\binterface\s+\w+\s*\{/, lang: 'typescript' },
+  { pattern: /\bimport\s+java\./, lang: 'java' },
 ];
 
 const FENCE_PATTERN = /```/;
@@ -62,7 +133,7 @@ const countMatches = (text: string, pattern: RegExp) => {
 
 const scoreText = (text: string, patterns: RegExp[]) => {
   return patterns.reduce((score, pattern) => {
-    const count = Math.min(countMatches(text, pattern), 6);
+    const count = Math.min(countMatches(text, pattern), 5); // Cap to avoid one keyword dominating
     return score + count;
   }, 0);
 };
@@ -73,30 +144,53 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
     return { isCode: false, language: 'unknown', score: 0 };
   }
 
-  const scores = {
-    javascript: scoreText(normalized, LANGUAGE_PATTERNS.javascript),
-    python: scoreText(normalized, LANGUAGE_PATTERNS.python),
-    cpp: scoreText(normalized, LANGUAGE_PATTERNS.cpp),
-  };
-
-  const entries = Object.entries(scores) as Array<['javascript' | 'python' | 'cpp', number]>;
-  let bestLanguage: DetectedLanguage = 'unknown';
-  let maxScore = 0;
-
-  for (const [language, score] of entries) {
-    if (score > maxScore) {
-      maxScore = score;
-      bestLanguage = language;
+  // 1. Check for markdown code fences (e.g. ```python)
+  const fenceMatch = normalized.match(/^```([^\s]+)/);
+  if (fenceMatch && fenceMatch[1]) {
+    const langMap: Record<string, DetectedLanguage> = {
+      js: 'javascript', javascript: 'javascript',
+      ts: 'typescript', typescript: 'typescript',
+      py: 'python', python: 'python',
+      cpp: 'cpp', c: 'cpp', 'c++': 'cpp',
+      java: 'java',
+      cs: 'csharp', csharp: 'csharp',
+      go: 'go',
+      rs: 'rust', rust: 'rust',
+      php: 'php',
+      rb: 'ruby', ruby: 'ruby'
+    };
+    const mappedLang = langMap[fenceMatch[1].toLowerCase()];
+    if (mappedLang) {
+      return { isCode: true, language: mappedLang, score: 100 };
     }
   }
 
-  const hasStrongSignal = STRONG_SIGNALS.some((pattern) => pattern.test(normalized));
-  const minScore = normalized.length > 200 ? 6 : normalized.length > 120 ? 5 : normalized.length > 60 ? 4 : 3;
+  // 2. Check for unmistakable strong signals
+  for (const signal of STRONG_SIGNALS) {
+    if (signal.pattern.test(normalized)) {
+      return { isCode: true, language: signal.lang, score: 50 };
+    }
+  }
 
-  const isCode =
-    FENCE_PATTERN.test(normalized) ||
-    (hasStrongSignal && maxScore >= 2) ||
-    maxScore >= minScore;
+  // 3. Score against all languages
+  const scores: Record<string, number> = {};
+  for (const [lang, patterns] of Object.entries(LANGUAGE_PATTERNS)) {
+    scores[lang] = scoreText(normalized, patterns);
+  }
+
+  let bestLanguage: DetectedLanguage = 'unknown';
+  let maxScore = 0;
+
+  for (const [language, score] of Object.entries(scores)) {
+    if (score > maxScore) {
+      maxScore = score;
+      bestLanguage = language as DetectedLanguage;
+    }
+  }
+
+  // Determine if it's actually code
+  const minScore = normalized.length > 200 ? 5 : normalized.length > 100 ? 4 : normalized.length > 40 ? 3 : 2;
+  const isCode = FENCE_PATTERN.test(normalized) || maxScore >= minScore;
 
   return {
     isCode,

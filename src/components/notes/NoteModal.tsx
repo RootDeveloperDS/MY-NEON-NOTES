@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
@@ -20,6 +21,7 @@ import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
 const noteFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   content: z.string().min(1, 'Content is required'),
+  isPublic: z.boolean().default(false),
 });
 
 type NoteFormValues = z.infer<typeof noteFormSchema>;
@@ -30,12 +32,7 @@ interface NoteModalProps {
   note: Note | null;
 }
 
-const languageLabels: Record<DetectedLanguage, string> = {
-  javascript: 'JavaScript',
-  python: 'Python',
-  cpp: 'C++',
-  unknown: 'Code',
-};
+
 
 export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
   const { toast } = useToast();
@@ -46,6 +43,7 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
     defaultValues: {
       title: '',
       content: '',
+      isPublic: false,
     },
   });
 
@@ -54,27 +52,17 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
       form.reset({
         title: note.title,
         content: note.content,
+        isPublic: note.isPublic ?? false,
       });
     } else {
       form.reset({
         title: '',
         content: '',
+        isPublic: false,
       });
     }
   }, [note, form, isOpen]);
 
-  const contentValue = form.watch('content') ?? '';
-  const [codeDetection, setCodeDetection] = useState(() => detectCodeBlock(contentValue));
-  const showCodePreview = codeDetection.isCode && contentValue.trim().length > 0;
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setCodeDetection(detectCodeBlock(contentValue));
-    }, 500);
-
-    return () => clearTimeout(timeout);
-  }, [contentValue]);
-  
   const isSubmitting = form.formState.isSubmitting;
 
   const onSubmit = async (data: NoteFormValues) => {
@@ -120,55 +108,63 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] border-accent/50 shadow-[0_0_20px_hsl(var(--accent)/0.4)] flex flex-col resize overflow-auto min-h-[400px] min-w-[300px]">
-        <DialogHeader>
-          <DialogTitle className="font-headline text-accent text-2xl">{note ? 'Edit Note' : 'Create Note'}</DialogTitle>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] border-accent/50 shadow-[0_0_20px_hsl(var(--accent)/0.4)] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="font-sans font-bold text-accent text-2xl">{note ? 'Edit Note' : 'Create Note'}</DialogTitle>
           <DialogDescription>{note ? 'Modify your note details below.' : 'Fill out the details for your new note.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-grow flex flex-col">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter note title..." {...field} className="font-note" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem className="flex-grow flex flex-col space-y-3">
-                  <FormLabel>Content</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Type your note here..." className="min-h-[200px] font-note flex-grow resize-none" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                  {showCodePreview && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-primary/80">
-                        <span className="font-semibold">Code detected</span>
-                        <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[10px] text-primary">
-                          {languageLabels[codeDetection.language]}
-                        </span>
-                      </div>
-                      <NoteCodeBlock
-                        content={contentValue}
-                        language={codeDetection.language}
-                        className="max-h-64 overflow-y-auto"
-                      />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-grow flex flex-col overflow-hidden">
+            <div className="flex-grow overflow-y-auto pr-2 space-y-4 max-h-[calc(90vh-180px)]">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter note title..." {...field} className="font-note" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col space-y-3 flex-grow">
+                    <FormLabel>Content</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Type your note here... (Code will be highlighted on the dashboard)" className="min-h-[250px] font-note resize-none flex-grow" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isPublic"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border border-accent/20 bg-accent/5 p-4 shadow-sm">
+                    <div className="space-y-1">
+                      <FormLabel className="text-sm font-medium">Make Publicly Shareable</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Anyone with the link can view this note (read-only).
+                      </p>
                     </div>
-                  )}
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="data-[state=checked]:bg-accent"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <DialogFooter className="flex-shrink-0 pt-4 border-t border-accent/10">
               <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </Button>

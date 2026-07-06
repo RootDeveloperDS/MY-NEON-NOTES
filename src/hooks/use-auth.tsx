@@ -10,10 +10,14 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  setPersistence,
+  browserSessionPersistence,
+  browserLocalPersistence,
+  signInWithCustomToken,
   User
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { clearStoredAuthTokens, getAuthTokenStorageState, storeAuthToken, type TokenPersistence } from '@/lib/auth-token';
+export type TokenPersistence = 'temporary' | 'persistent';
 import { apiFetch } from '@/lib/api-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from './use-toast';
@@ -55,6 +59,7 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
     const urlUid = searchParams.get('UID');
     
     if (urlUid) {
@@ -65,28 +70,36 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
       }
       
       setLoading(true);
-      apiFetch(`https://visar-backend.onrender.com/api/verify_uid?uid=${urlUid}`)
+      apiFetch(`https://visar-backend.onrender.com/api/verify_uid_return_customtoken_for_neon_notes?uid=${urlUid}`)
         .then(res => {
           if (!res.ok) {
             throw new Error('Network response was not ok');
           }
           return res.json();
         })
-        .then(data => {
+        .then(async data => {
           if (data.valid) {
-            setActiveUid(urlUid);
-            setIsUrlAuth(true);
-            toast({ title: 'Login Successful', description: 'Logged in using URL UID.' });
+            if (data.customToken) {
+              await signInWithCustomToken(auth, data.customToken);
+              setActiveUid(urlUid);
+              setIsUrlAuth(true);
+              toast({ title: 'Login Successful', description: 'Logged in securely via URL.' });
+            } else {
+              // Fallback for backwards compatibility if backend is not updated yet
+              setActiveUid(urlUid);
+              setIsUrlAuth(true);
+              toast({ title: 'Login Successful', description: 'Logged in using URL UID (Unsecured Mode).' });
+            }
           } else {
             toast({ variant: 'destructive', title: 'Invalid UID', description: 'The UID in the URL is not valid. Please log in normally.' });
             setIsUrlAuth(false);
             // Fallback to normal auth
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
+            const unsub = onAuthStateChanged(auth, (user) => {
               setUser(user);
               setActiveUid(user?.uid || null);
               setLoading(false);
             });
-            return unsubscribe;
+            unsubscribe = unsub;
           }
         })
         .catch((err) => {
@@ -99,60 +112,51 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
 
     } else {
        // Standard Firebase Auth
-       const unsubscribe = onAuthStateChanged(auth, (user) => {
+       unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
         if (!isUrlAuth) {
           setActiveUid(user ? user.uid : null);
         }
         setLoading(false);
       });
-      return () => unsubscribe();
     }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const signInWithGoogle = async (persistence: TokenPersistence) => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const token = await result.user.getIdToken();
-    const storageResult = storeAuthToken(token, persistence);
-    if (storageResult.fallbackToMemory) {
-      const storageState = getAuthTokenStorageState();
-      toast({
-        variant: 'destructive',
-        title: 'Storage blocked',
-        description: 'Browser storage is unavailable, so this session will be kept in memory only.',
-      });
-      if (storageState.sessionStorageBlocked || storageState.localStorageBlocked) {
-        console.warn('Browser storage blocked; auth token stored in memory only.');
+  const applyPersistence = async (persistence: TokenPersistence) => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (persistence === 'temporary') {
+          sessionStorage.setItem('neon_auth_persistence', 'temporary');
+        } else {
+          sessionStorage.removeItem('neon_auth_persistence');
+        }
+      } catch {
+        // Storage can be blocked/disabled; Firebase persistence will still be applied below.
       }
     }
+    const firebasePersistence = persistence === 'temporary' ? browserSessionPersistence : browserLocalPersistence;
+    await setPersistence(auth, firebasePersistence);
+  };
+
+  const signInWithGoogle = async (persistence: TokenPersistence) => {
+    await applyPersistence(persistence);
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
   };
   
   const signUpWithEmail = async (email: string, password: string, persistence: TokenPersistence) => {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    const token = await result.user.getIdToken();
-    const storageResult = storeAuthToken(token, persistence);
-    if (storageResult.fallbackToMemory) {
-      toast({
-        variant: 'destructive',
-        title: 'Storage blocked',
-        description: 'Browser storage is unavailable, so this session will be kept in memory only.',
-      });
-    }
+    await applyPersistence(persistence);
+    await createUserWithEmailAndPassword(auth, email, password);
   };
   
   const signInWithEmail = async (email: string, password: string, persistence: TokenPersistence) => {
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    const token = await result.user.getIdToken();
-    const storageResult = storeAuthToken(token, persistence);
-    if (storageResult.fallbackToMemory) {
-      toast({
-        variant: 'destructive',
-        title: 'Storage blocked',
-        description: 'Browser storage is unavailable, so this session will be kept in memory only.',
-      });
-    }
+    await applyPersistence(persistence);
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   const resetPassword = async (email: string) => {
@@ -161,23 +165,31 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      if (isUrlAuth) {
-        setIsUrlAuth(false);
-        setActiveUid(null);
-        setUser(null);
-        return;
-      }
-
+      setIsUrlAuth(false);
+      setActiveUid(null);
+      setUser(null);
       await signOut(auth);
     } finally {
-      clearStoredAuthTokens();
-      router.push('/');
+      // Use window.location.href to force a hard reload and completely wipe any ?UID= query parameters
+      window.location.href = '/';
     }
-  }, [isUrlAuth, router]);
+  }, []);
 
   useEffect(() => {
     if (!activeUid) {
       return;
+    }
+
+    let isTemporary = false;
+    if (typeof window !== 'undefined') {
+      try {
+        isTemporary = sessionStorage.getItem('neon_auth_persistence') === 'temporary';
+      } catch {
+        isTemporary = false;
+      }
+    }
+    if (!isTemporary && !isUrlAuth) {
+      return; // Do not run idle logout for persistent sessions.
     }
 
     const idleTimeoutMs = getIdleTimeoutMs();

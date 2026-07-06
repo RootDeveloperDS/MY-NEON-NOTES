@@ -10,7 +10,7 @@ import { NoteModal } from '@/components/notes/NoteModal';
 import { NoteViewer } from '@/components/notes/NoteViewer';
 import { NotesFooter } from '@/components/notes/NotesFooter';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +32,22 @@ export function NotesDashboard() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [isViewerDeleteDialogOpen, setIsViewerDeleteDialogOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [cols, setCols] = useState(1);
+
+  useEffect(() => {
+    setMounted(true);
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width >= 1280) setCols(4);
+      else if (width >= 1024) setCols(3);
+      else if (width >= 640) setCols(2);
+      else setCols(1);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (authLoading) {
@@ -85,6 +101,14 @@ export function NotesDashboard() {
     );
   }, [notes, searchTerm]);
 
+  const masonryColumns = useMemo(() => {
+    const result: Note[][] = Array.from({ length: cols }, () => []);
+    filteredNotes.forEach((note, index) => {
+      result[index % cols].push(note);
+    });
+    return result;
+  }, [filteredNotes, cols]);
+
   const latestViewingNote = useMemo(() => {
     if (!viewingNote) return null;
     return notes.find((note) => note.id === viewingNote.id) ?? null;
@@ -107,6 +131,7 @@ export function NotesDashboard() {
     const hasViewerContentChanged =
       latestViewingNote.title !== viewingNote.title ||
       latestViewingNote.content !== viewingNote.content ||
+      latestViewingNote.isPublic !== viewingNote.isPublic ||
       hasUpdatedAtChanged;
 
     if (hasViewerContentChanged) {
@@ -152,8 +177,6 @@ export function NotesDashboard() {
     <div className={`relative min-h-screen p-4 md:p-8 ${dashboardBottomSpacingClass}`}>
       <NotesHeader
         onSearchChange={setSearchTerm}
-        onLogout={logout}
-        showSettings={!isUrlAuth}
       />
 
       {loading ? (
@@ -163,15 +186,45 @@ export function NotesDashboard() {
       ) : (
         <>
           {!viewingNote ? (
-            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredNotes.map((note) => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  onView={() => handleViewNote(note)}
-                  onEdit={() => handleOpenModal(note)}
-                />
-              ))}
+            <div className="mt-8">
+              {filteredNotes.length > 0 && (
+                <div className="mb-6 flex flex-wrap items-center gap-4 pb-2">
+                  <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-card/40 px-4 py-2 shadow-sm transition-all duration-300 hover:border-primary/50 hover:bg-card/60">
+                    <FileText className="h-5 w-5 text-primary opacity-80" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Total Notes</span>
+                      <span className="font-headline text-xl text-primary leading-tight">{filteredNotes.length}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {!mounted ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredNotes.map((note) => (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      onView={() => handleViewNote(note)}
+                      onEdit={() => handleOpenModal(note)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+                  {masonryColumns.map((colNotes, colIdx) => (
+                    <div key={colIdx} className="flex flex-col gap-6">
+                      {colNotes.map((note) => (
+                        <NoteCard
+                          key={note.id}
+                          note={note}
+                          onView={() => handleViewNote(note)}
+                          onEdit={() => handleOpenModal(note)}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
               <div className={`mt-8 transition-all duration-300 lg:grid ${splitViewMinHeightClass} ${splitViewGridClass} lg:gap-5`}>
@@ -216,9 +269,27 @@ export function NotesDashboard() {
       )}
       
       {activeUid && filteredNotes.length === 0 && !loading && (
-        <div className="text-center py-20">
-          <h2 className="text-2xl font-bold">No notes found.</h2>
-          <p className="text-muted-foreground">Create your first note to get started.</p>
+        <div className="flex flex-col items-center justify-center py-16 px-4 md:py-24">
+          <div className="group relative flex w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-10 text-center sm:p-12">
+            <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            <div className="mb-6 rounded-full bg-primary/10 p-4 shadow-[0_0_20px_hsl(var(--primary)/0.2)] transition-transform duration-500 group-hover:scale-110">
+               <FileText className="h-10 w-10 text-primary" />
+            </div>
+            <h2 className="mb-2 font-headline text-2xl text-primary tracking-wide drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)]">
+              NO NOTES FOUND
+            </h2>
+            <p className="mb-8 max-w-[280px] text-sm leading-relaxed text-muted-foreground">
+              Looks empty here. Create your first note and start building your knowledge.
+            </p>
+            <Button
+              onClick={() => handleOpenModal()}
+              variant="outline"
+              className="border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create First Note
+            </Button>
+          </div>
         </div>
       )}
 
