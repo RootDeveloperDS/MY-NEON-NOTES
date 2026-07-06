@@ -44,7 +44,7 @@ export function SettingsDialog({ children, open, onOpenChange }: SettingsDialogP
               Theme
             </Label>
             <div className="col-span-3">
-              <Select value={theme} onValueChange={setTheme}>
+              <Select value={theme ?? 'cyberpunk'} onValueChange={setTheme}>
                 <SelectTrigger id="theme-select">
                   <SelectValue placeholder="Select a theme" />
                 </SelectTrigger>

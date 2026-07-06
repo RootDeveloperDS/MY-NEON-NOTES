@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, Copy, FilePenLine, Trash2, Globe, Share2 } from 'lucide-react';
 import { detectCodeBlock } from '@/lib/code-detect';
 import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';

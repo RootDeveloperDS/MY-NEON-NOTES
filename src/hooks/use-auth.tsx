@@ -59,6 +59,7 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
     const urlUid = searchParams.get('UID');
     
     if (urlUid) {
@@ -93,12 +94,12 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
             toast({ variant: 'destructive', title: 'Invalid UID', description: 'The UID in the URL is not valid. Please log in normally.' });
             setIsUrlAuth(false);
             // Fallback to normal auth
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
+            const unsub = onAuthStateChanged(auth, (user) => {
               setUser(user);
               setActiveUid(user?.uid || null);
               setLoading(false);
             });
-            return unsubscribe;
+            unsubscribe = unsub;
           }
         })
         .catch((err) => {
@@ -111,24 +112,31 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
 
     } else {
        // Standard Firebase Auth
-       const unsubscribe = onAuthStateChanged(auth, (user) => {
+       unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
         if (!isUrlAuth) {
           setActiveUid(user ? user.uid : null);
         }
         setLoading(false);
       });
-      return () => unsubscribe();
     }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const applyPersistence = async (persistence: TokenPersistence) => {
     if (typeof window !== 'undefined') {
-      if (persistence === 'temporary') {
-        sessionStorage.setItem('neon_auth_persistence', 'temporary');
-      } else {
-        sessionStorage.removeItem('neon_auth_persistence');
+      try {
+        if (persistence === 'temporary') {
+          sessionStorage.setItem('neon_auth_persistence', 'temporary');
+        } else {
+          sessionStorage.removeItem('neon_auth_persistence');
+        }
+      } catch {
+        // Storage can be blocked/disabled; Firebase persistence will still be applied below.
       }
     }
     const firebasePersistence = persistence === 'temporary' ? browserSessionPersistence : browserLocalPersistence;
@@ -172,7 +180,14 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
       return;
     }
 
-    const isTemporary = typeof window !== 'undefined' && sessionStorage.getItem('neon_auth_persistence') === 'temporary';
+    let isTemporary = false;
+    if (typeof window !== 'undefined') {
+      try {
+        isTemporary = sessionStorage.getItem('neon_auth_persistence') === 'temporary';
+      } catch {
+        isTemporary = false;
+      }
+    }
     if (!isTemporary && !isUrlAuth) {
       return; // Do not run idle logout for persistent sessions.
     }

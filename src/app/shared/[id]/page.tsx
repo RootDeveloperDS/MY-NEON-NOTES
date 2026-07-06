@@ -50,17 +50,25 @@ export default function SharedNotePage() {
     fetchNote();
   }, [id]);
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setIsLinkCopied(true);
-    setTimeout(() => setIsLinkCopied(false), 2000);
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setIsLinkCopied(true);
+      setTimeout(() => setIsLinkCopied(false), 2000);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleCopyContent = () => {
+  const handleCopyContent = async () => {
     if (!note) return;
-    navigator.clipboard.writeText(note.content);
-    setIsContentCopied(true);
-    setTimeout(() => setIsContentCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(note.content);
+      setIsContentCopied(true);
+      setTimeout(() => setIsContentCopied(false), 2000);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   if (loading) {

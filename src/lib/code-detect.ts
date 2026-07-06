@@ -145,7 +145,7 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
   }
 
   // 1. Check for markdown code fences (e.g. ```python)
-  const fenceMatch = normalized.match(/^```(\w+)/);
+  const fenceMatch = normalized.match(/^```([^\s]+)/);
   if (fenceMatch && fenceMatch[1]) {
     const langMap: Record<string, DetectedLanguage> = {
       js: 'javascript', javascript: 'javascript',
