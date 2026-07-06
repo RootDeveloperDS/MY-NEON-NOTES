@@ -16,7 +16,7 @@
 
 <br />
 
-![Neon Notes Dashboard](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/dashboard-v1.png)
+![Neon Notes Dashboard](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/dashboard-v2.png)
 
 ---
 
@@ -78,14 +78,13 @@ The application assumes every shared computer is untrusted and prioritizes secur
 
 ## 📸 Screenshots
 
-*(Replace with actual screenshot URLs when ready)*
 
-- **Login Page**: `[Add Image]`
-- **Dashboard**: ![Dashboard](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/dashboard-v1.png)
-- **Note Editor**: `[Add Image]`
-- **Mobile View**: `[Add Image]`
-- **Syntax Highlighting**: `[Add Image]`
-- **Settings**: `[Add Image]`
+- **Login Page**: ![Login Screen](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/login-page-v11.1.png)
+- **Dashboard**: ![Dashboard](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/dashboard-v2.png)
+- **Note Editor**: ![Note Editor](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/note-editor-v11.1.png)
+- **Mobile View**: ![Mobile View](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/mobile-view-v11.1.jpg)
+- **Syntax Highlighting**: ![Syntax Highlighting](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/syntax-highlighting-v11.1.png)
+- **Settings**: ![Settings](https://raw.githubusercontent.com/RootDeveloperDS/CDN/refs/heads/main/neonnotes/settings-v11.1.png)
 
 ---
 

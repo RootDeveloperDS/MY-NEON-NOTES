@@ -20,7 +20,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
-const dashboardBottomSpacingClass = 'pb-28 md:pb-32';
 
 export function NotesDashboard() {
   const { activeUid, loading: authLoading, logout, isUrlAuth } = useAuth();
@@ -174,10 +173,11 @@ export function NotesDashboard() {
   };
 
   return (
-    <div className={`relative min-h-screen p-4 md:p-8 ${dashboardBottomSpacingClass}`}>
-      <NotesHeader
-        onSearchChange={setSearchTerm}
-      />
+    <div className="relative flex min-h-screen flex-col p-4 md:p-8 pb-4 md:pb-8">
+      <div className="flex-1 pb-28 md:pb-32">
+        <NotesHeader
+          onSearchChange={setSearchTerm}
+        />
 
       {loading ? (
         <div className="flex h-[60vh] items-center justify-center">
@@ -340,8 +340,11 @@ export function NotesDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
 
-      <NotesFooter />
+      <div className="mt-auto">
+        <NotesFooter />
+      </div>
     </div>
   );
 }

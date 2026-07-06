@@ -43,7 +43,9 @@ export function NotesFooter() {
         </div>
 
         <div className="space-y-2.5 lg:text-right">
-          <p className="text-sm leading-relaxed text-muted-foreground">100% Open Source - Contributions are Welcome</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            <Link href="https://github.com/RootDeveloperDS/MY-NEON-NOTES/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors hover:underline">MIT License</Link> — 100% Open Source - Contributions are Welcome
+          </p>
           <p className="text-sm leading-relaxed text-muted-foreground">⭐ Star the repo if you like the project</p>
           <Link
             href="https://github.com/RootDeveloperDS/MY-NEON-NOTES/"
