@@ -53,11 +53,14 @@ The application assumes every shared computer is untrusted and prioritizes secur
 
 - **Secure isolated login flow** for shared/public systems
 - **Aggressive auto-logout** after inactivity
-- **Dual-session authentication** for public vs trusted devices
+- **Dual-session authentication** for public vs trusted devices with secure custom token handoff
 - **Smart code-first editor behavior** for quick snippet handling
-- **Auto-detect syntax highlighting** for C++, Python, and JavaScript
-- **Responsive UI** for desktop and mobile use
-- **Real-time cloud-backed notes** with Firebase
+- **Auto-detect syntax highlighting** supporting 10+ programming languages powered by a robust code classifier
+- **Public Note Sharing Architecture** with standalone read-only viewers and real-time dashboard sync
+- **Global Search Shortcut** (Ctrl/Cmd + K) with transition animations
+- **Multi-theme support** including Cyberpunk and System preferences
+- **Responsive UI** optimized for both desktop and mobile layouts
+- **Real-time cloud-backed notes** with Firebase integration
 
 ---
 
@@ -105,20 +108,20 @@ Firestore
 
 ## 🚧 Roadmap
 
-- [x] Authentication
+- [x] Authentication & Custom Token Security
 - [x] Cloud Sync
-- [x] Syntax Highlighting
-- [x] Mobile Responsive
+- [x] Heuristic Code Classifier & Highlighting (10+ Languages)
+- [x] Mobile Responsive Optimization
+- [x] Keyboard Shortcuts (Ctrl/Cmd + K Global Search)
+- [x] Public Note Sharing Architecture (v10.0)
 
 **Upcoming**
 - [ ] Markdown Preview
-- [ ] File Attachments
 - [ ] Folder Organization
+- [ ] File Attachments
 - [ ] AI Note Summaries
 - [ ] Offline Mode (PWA)
-- [ ] Tags & Search
 - [ ] Version History
-- [ ] Keyboard Shortcuts
 
 ---
 
@@ -148,6 +151,13 @@ Neon Notes fixes this by offering:
 ---
 
 ## 3) Latest Production Updates (Changelog)
+
+### Version 10.0 (July 6, 2026)
+* **Public Note Sharing**: Implemented public note sharing with standalone read-only viewers (`/shared/[id]`), auto-publish state synchronization, and reactive dashboard updates.
+* **Security & Auth Overhaul**: Migrated session authentication to a secure custom token handoff using a new backend endpoint (`/api/verify_uid_return_customtoken_for_neon_notes`), solving session desync and preserving sessions dynamically without static credentials (`auth-token.ts`).
+* **Robust Code Classifier**: Developed a language classifier in `code-detect.ts` matching 10+ programming languages, integrated with `prism-c` for rich syntax highlighting.
+* **Multi-Theme Support**: Extracted legacy themes, added a new Cyberpunk theme mode, and integrated a customizable settings dialog.
+* **UI/UX Refinements**: Added a global search shortcut (`Ctrl/Cmd + K`), repositioned toast notifications to top-center with backdrop-blur styling, and optimized mobile header responsiveness.
 
 ### Aggressive Auto-Logout
 - Client-side idle detection now destroys the session after **15 minutes** of inactivity.
