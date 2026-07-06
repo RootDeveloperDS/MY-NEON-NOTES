@@ -113,7 +113,7 @@ Firestore
 - [x] Heuristic Code Classifier & Highlighting (10+ Languages)
 - [x] Mobile Responsive Optimization
 - [x] Keyboard Shortcuts (Ctrl/Cmd + K Global Search)
-- [x] Public Note Sharing Architecture (v10.0)
+- [x] Public Note Sharing Architecture (v11.0)
 
 **Upcoming**
 - [ ] Markdown Preview
@@ -152,12 +152,14 @@ Neon Notes fixes this by offering:
 
 ## 3) Latest Production Updates (Changelog)
 
-### Version 10.0 (July 6, 2026)
-* **Public Note Sharing**: Implemented public note sharing with standalone read-only viewers (`/shared/[id]`), auto-publish state synchronization, and reactive dashboard updates.
-* **Security & Auth Overhaul**: Migrated session authentication to a secure custom token handoff using a new backend endpoint (`/api/verify_uid_return_customtoken_for_neon_notes`), solving session desync and preserving sessions dynamically without static credentials (`auth-token.ts`).
-* **Robust Code Classifier**: Developed a language classifier in `code-detect.ts` matching 10+ programming languages, integrated with `prism-c` for rich syntax highlighting.
-* **Multi-Theme Support**: Extracted legacy themes, added a new Cyberpunk theme mode, and integrated a customizable settings dialog.
-* **UI/UX Refinements**: Added a global search shortcut (`Ctrl/Cmd + K`), repositioned toast notifications to top-center with backdrop-blur styling, and optimized mobile header responsiveness.
+### Version 11.0 (July 6, 2026)
+*Engineered a comprehensive architectural upgrade introducing public note sharing through standalone read-only viewers and real-time state synchronization. Refactored the authentication engine to deploy secure custom token verification, eliminating unsecured UID parameter queries and mitigating inactive session memory leaks. Polished application UX with custom Tailwind dark-mode theme selectors, interactive global search telemetry, and a multi-language heuristic classifier.*
+
+* **Note Sharing & Public Access**: Created `src/app/shared/[id]/page.tsx` routing for public, unauthenticated read-only access to specific notes. Modified components to ingest, mutate, and render the optional `isPublic` flag. Enhanced `NotesDashboard.tsx` to reactively capture and update the viewer panel state. Upgraded asynchronous clipboard operations with robust error handling.
+* **Heuristic Code Classifier & Highlighting Engine**: Developed custom regex heuristics mapping 10 programming languages. Optimized regex match boundaries for global namespaces to eliminate false-positives. Configured code fence parser regex to correctly process special character language tags (e.g., C++). Integrated `prism-c` for rich syntax highlighting in `NoteCodeBlock.tsx` and `NoteModal.tsx`.
+* **Authentication & Session Persistence**: Integrated secure token handoff backend endpoint (`/api/verify_uid_return_customtoken_for_neon_notes`). Engineered dynamic token updates in `api-client.ts`, replacing legacy token management. Sandboxed `sessionStorage` accesses to prevent incognito script crashes and resolved active auth listener memory leaks in the URL authentication lifecycle.
+* **Theme Engine & UI/UX Optimizations**: Decoupled legacy theme code into a centralized `theme-provider.tsx`. Configured Tailwind custom selectors to support class-based dark overrides (`.legacy`, `.cyberpunk`). Developed a customizable settings dialog with fallback modes. Added visual polish to toast notifications (`backdrop-blur-md`, top-center positioning, `2500ms` auto-dismiss) and embedded `Ctrl/Cmd + K` search focus hooks.
+* **Bug Fixes & Stability**: Fixed `activeUid` updates in `use-auth.tsx` for custom token logins to prevent dashboard sync issues. Pruned deprecated package `fluorite`. Purged unused import references and dead code across components.
 
 ### Aggressive Auto-Logout
 - Client-side idle detection now destroys the session after **15 minutes** of inactivity.
@@ -170,7 +172,7 @@ Neon Notes fixes this by offering:
 - Supports a zero-trust default without hurting personal-device usability.
 
 ### Auto-Detect Code Highlighting
-- Debounce-wrapped regex engine auto-detects **C++**, **Python**, and **JavaScript**.
+- Heuristic classifier auto-detects **JavaScript**, **TypeScript**, **Python**, **C++**, **Java**, **C#**, **Go**, **Rust**, **PHP**, and **Ruby**.
 - Applies read-only syntax highlighting without heavy editor-library overhead.
 
 ---
