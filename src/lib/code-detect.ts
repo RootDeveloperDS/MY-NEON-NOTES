@@ -9,8 +9,8 @@ export interface CodeDetectionResult {
 const LANGUAGE_PATTERNS: Record<Exclude<DetectedLanguage, 'unknown'>, RegExp[]> = {
   javascript: [
     /\bconsole\.log\b/g,
-    /\bdocument\.\b/g,
-    /\bwindow\.\b/g,
+    /\bdocument\./g,
+    /\bwindow\./g,
     /\bfunction\s+\w+/g,
     /=>/g,
     /\bexport\s+const\b/g,

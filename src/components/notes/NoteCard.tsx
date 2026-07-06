@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Note } from '@/lib/types';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { FilePenLine, Trash2, Copy, FileCode2, Globe, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -79,7 +79,7 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
         });
       }
       const shareUrl = `${window.location.origin}/shared/${note.id}`;
-      navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(shareUrl);
     } catch (error) {
       toast({
         variant: 'destructive',

@@ -9,7 +9,6 @@ import { UserProfile } from '@/components/auth/UserProfile';
 
 interface NotesHeaderProps {
   onSearchChange: (term: string) => void;
-  showSettings?: boolean;
 }
 
 export function NotesHeader({ onSearchChange }: NotesHeaderProps) {

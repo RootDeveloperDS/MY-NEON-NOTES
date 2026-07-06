@@ -45,7 +45,7 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
         });
       }
       const shareUrl = `${window.location.origin}/shared/${note.id}`;
-      navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(shareUrl);
     } catch (error) {
       toast({
         variant: 'destructive',
