@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Github, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { UserProfile } from '@/components/auth/UserProfile';
+import Image from 'next/image';
 
 interface NotesHeaderProps {
   onSearchChange: (term: string) => void;
@@ -38,9 +39,18 @@ export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
     <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       {/* Title & Mobile Profile Row */}
       <div className="flex w-full items-center justify-between md:w-auto">
-        <h1 className="font-headline text-4xl text-primary drop-shadow-[0_0_5px_hsl(var(--primary))]">
-          Neon Notes
-        </h1>
+        <div className="flex items-center gap-3">
+          <Image
+            src="/favicon.svg"
+            alt="Neon Notes Logo"
+            width={60}
+            height={60}
+            className="drop-shadow-[0_0_5px_hsl(var(--primary))]"
+          />
+          <h1 className="font-headline text-4xl text-primary drop-shadow-[0_0_5px_hsl(var(--primary))]">
+            Neon Notes
+          </h1>
+        </div>
         <div className="block md:hidden">
           <UserProfile />
         </div>

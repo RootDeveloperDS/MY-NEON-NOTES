@@ -120,3 +120,4 @@ service cloud.firestore {
 This rule-set establishes a critical security boundary:
 - **Standard Users**: Have full Create, Read, Update, and Delete (CRUD) permissions on their own notes.
 - **URL UID Users**: Have **Create-only** permissions. They cannot read, update, or delete notes via the app because we cannot securely verify their identity within the security rules themselves (`request.auth` is null). This is a deliberate trade-off that prioritizes data security.
+

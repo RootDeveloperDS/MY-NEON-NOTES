@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from 'lucide-react';
+import Image from 'next/image';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -85,26 +86,40 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-3 sm:p-4 bg-background">
       <Card className="w-full max-w-sm border-primary/50 bg-card/80 shadow-[0_0_15px_hsl(var(--primary)/0.5)] backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="font-headline text-3xl text-primary">NEON NOTES</CardTitle>
-          <CardDescription>System Access Protocol</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-center gap-3 p-4 sm:p-6 pb-2">
+          <div className="relative flex items-center justify-center">
+            {/* Glowing background halo */}
+            <div className="absolute inset-0 rounded-full bg-primary/20 blur-md animate-pulse" />
+            <Image
+              src="/favicon.svg"
+              alt="Neon Notes Logo"
+              width={48}
+              height={48}
+              className="relative transition-transform duration-500 hover:scale-110 drop-shadow-[0_0_8px_hsl(var(--primary)/0.6)]"
+              priority
+            />
+          </div>
+          <div className="flex flex-col items-start text-left">
+            <CardTitle className="font-headline text-2xl text-primary drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)] leading-none">NEON NOTES</CardTitle>
+            <CardDescription className="text-xs mt-1">System Access Protocol</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
-        <Tabs defaultValue="signin" className="w-full">
+        <CardContent className="p-4 sm:p-6 pt-2">
+          <Tabs defaultValue="signin" className="w-full">
             {/* TabsList: make it responsive with flex and gap for mobile */}
-            <TabsList className=" flex w-full justify-between gap-2 sm:gap-4">
+            <TabsList className="flex w-full justify-between gap-2">
               <TabsTrigger 
                 value="signin" 
-                className="flex-1 text-center whitespace-nowrap px-2 py-1 sm:px-4 sm:py-2"
+                className="flex-1 text-center whitespace-nowrap px-2 py-1 text-xs sm:text-sm"
               >
                 Sign In
               </TabsTrigger>
 
               <TabsTrigger 
                 value="signup" 
-                className="flex-1 text-center whitespace-nowrap px-2 py-1 sm:px-4 sm:py-2"
+                className="flex-1 text-center whitespace-nowrap px-2 py-1 text-xs sm:text-sm"
               >
                 New User
               </TabsTrigger>
@@ -112,36 +127,60 @@ export function LoginPage() {
 
             <Form {...form}>
               <form>
-                <TabsContent value="signin" className="space-y-4 pt-4">
+                <TabsContent value="signin" className="space-y-3 pt-3">
                   <AuthFormFields form={form} />
-                  <SessionToggle isPersistent={isPersistent} onChange={setIsPersistent} />
-                  <div className="flex justify-end">
+                  
+                  <div className="flex items-center justify-between px-1 py-1">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="session-toggle"
+                        checked={isPersistent}
+                        onCheckedChange={setIsPersistent}
+                        className="scale-75 origin-left"
+                      />
+                      <Label htmlFor="session-toggle" className="text-xs text-muted-foreground cursor-pointer select-none hover:text-cyan-200 transition-colors">
+                        Remember me
+                      </Label>
+                    </div>
                     <Button
                       type="button"
                       variant="link"
-                      className="h-auto p-0 text-xs"
+                      className="h-auto p-0 text-xs text-muted-foreground hover:text-primary transition-colors"
                       onClick={handlePasswordReset}
                       disabled={!!loading}
                     >
-                      Reset password
+                      Forgot password?
                     </Button>
                   </div>
+
                   <Button 
                     onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))} 
                     disabled={!!loading} 
-                    className="w-full"
+                    className="w-full mt-1"
                   >
                     {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign In'}
                   </Button>
                 </TabsContent>
 
-                <TabsContent value="signup" className="space-y-4 pt-4">
+                <TabsContent value="signup" className="space-y-3 pt-3">
                   <AuthFormFields form={form} />
-                  <SessionToggle isPersistent={isPersistent} onChange={setIsPersistent} />
+                  
+                  <div className="flex items-center gap-2 px-1 py-1">
+                    <Switch
+                      id="signup-session-toggle"
+                      checked={isPersistent}
+                      onCheckedChange={setIsPersistent}
+                      className="scale-75 origin-left"
+                    />
+                    <Label htmlFor="signup-session-toggle" className="text-xs text-muted-foreground cursor-pointer select-none hover:text-cyan-200 transition-colors">
+                      Remember me
+                    </Label>
+                  </div>
+
                   <Button 
                     onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))} 
                     disabled={!!loading} 
-                    className="w-full"
+                    className="w-full mt-1"
                   >
                     {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign Up'}
                   </Button>
@@ -150,7 +189,7 @@ export function LoginPage() {
             </Form>
           </Tabs>
           
-          <div className="relative my-6">
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
             </div>
@@ -171,17 +210,17 @@ export function LoginPage() {
 
 function AuthFormFields({ form }: { form: any }) {
     return (
-        <>
+        <div className="space-y-2">
             <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Email</FormLabel>
+                    <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">Email</FormLabel>
                         <FormControl>
-                            <Input placeholder="user@gmail.com" className="font-auth-input" {...field} />
+                            <Input placeholder="user@gmail.com" className="font-auth-input h-9 text-sm" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-[11px]" />
                     </FormItem>
                 )}
             />
@@ -189,50 +228,15 @@ function AuthFormFields({ form }: { form: any }) {
                 control={form.control}
                 name="password"
                 render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Password</FormLabel>
+                    <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">Password</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="P4$sW9rd" className="font-auth-input" {...field} />
+                            <Input type="password" placeholder="P4$sW9rd" className="font-auth-input h-9 text-sm" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-[11px]" />
                     </FormItem>
                 )}
             />
-        </>
+        </div>
     )
-}
-
-function SessionToggle({
-  isPersistent,
-  onChange,
-}: {
-  isPersistent: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  const toggleId = 'session-toggle';
-
-  return (
-    <div className="flex items-center justify-between rounded-xl border border-cyan-400/40 bg-cyan-400/10 px-3 py-2 shadow-[0_0_18px_rgba(34,211,238,0.35)] backdrop-blur-md">
-      <div className="space-y-1">
-        <Label htmlFor={toggleId} className="text-[11px] uppercase tracking-[0.28em] text-cyan-200">
-          Session Mode
-        </Label>
-        <p className="text-xs text-cyan-100/70">
-          {isPersistent
-            ? 'Persistent session (stored on this device)'
-            : 'Temporary session (clears when tab closes)'}
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] font-semibold text-cyan-200/70">TEMP</span>
-        <Switch
-          id={toggleId}
-          checked={isPersistent}
-          onCheckedChange={onChange}
-          className="border border-cyan-300/60 bg-cyan-500/10 shadow-[0_0_12px_rgba(34,211,238,0.55)] data-[state=checked]:bg-cyan-400/70"
-        />
-        <span className="text-[10px] font-semibold text-cyan-100">PERSIST</span>
-      </div>
-    </div>
-  );
 }
