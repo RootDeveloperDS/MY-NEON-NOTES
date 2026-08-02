@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
+import { trackEvent } from '@/lib/analytics';
 
 const noteFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
@@ -30,13 +31,14 @@ interface NoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   note: Note | null;
+  isFirstNote?: boolean;
 }
 
 
 
-export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
+export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps) {
   const { toast } = useToast();
-  const { activeUid } = useAuth();
+  const { activeUid, user } = useAuth();
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
@@ -94,6 +96,11 @@ export function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
           updatedAt: serverTimestamp() 
         });
         toast({ title: 'Note Created', description: 'Your new note has been saved.' });
+        if (isFirstNote) {
+          const userDisplay = user?.displayName || 'Anonymous';
+          const userEmail = user?.email || null;
+          trackEvent('First Note Created', 'User created their very first note', userDisplay, userEmail);
+        }
       }
       onClose();
     } catch (error) {

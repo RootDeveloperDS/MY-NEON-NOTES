@@ -11,6 +11,7 @@ import { Loader } from 'lucide-react';
 import { format } from 'date-fns';
 import { Globe, FileCode2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NotesFooter } from '@/components/notes/NotesFooter';
 
 export default function SharedNotePage() {
   const { id } = useParams();
@@ -169,9 +170,9 @@ export default function SharedNotePage() {
         </section>
       </div>
       
-      <footer className="mt-16 text-center text-xs text-muted-foreground border-t border-primary/10 pt-6 font-mono tracking-widest uppercase pb-4">
-         Powered by <span className="text-primary/70">Neon Notes</span>
-      </footer>
+      <div className="w-full">
+        <NotesFooter />
+      </div>
     </main>
   );
 }

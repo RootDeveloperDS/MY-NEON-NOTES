@@ -7,12 +7,15 @@ import { Search, Github, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { UserProfile } from '@/components/auth/UserProfile';
 import Image from 'next/image';
+import { trackEvent } from '@/lib/analytics';
+import { useAuth } from '@/hooks/use-auth';
 
 interface NotesHeaderProps {
   onSearchChange: (term: string) => void;
 }
 
 export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
+  const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [kbdShortcut, setKbdShortcut] = useState('Ctrl');
 
@@ -85,6 +88,7 @@ export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
             href="https://github.com/RootDeveloperDS/MY-NEON-NOTES/"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackEvent('Social Click', 'Clicked GitHub Repository (Header)', user?.displayName || 'Anonymous', user?.email || null)}
             aria-label="Open Neon Notes GitHub repository in a new tab"
             className="flex items-center gap-2"
           >
