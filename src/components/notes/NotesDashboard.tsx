@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { trackEvent } from '@/lib/analytics';
+import { useRouter } from 'next/navigation';
 
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
@@ -25,6 +26,7 @@ const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
 export function NotesDashboard() {
   const { activeUid, user, loading: authLoading, logout, isUrlAuth } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,6 +96,10 @@ export function NotesDashboard() {
   }, [activeUid, authLoading]);
 
   const handleOpenModal = (note: Note | null = null) => {
+    if (!activeUid) {
+      router.push('/login');
+      return;
+    }
     setSelectedNote(note);
     setIsModalOpen(true);
   };
@@ -279,7 +285,7 @@ export function NotesDashboard() {
         </>
       )}
       
-      {activeUid && filteredNotes.length === 0 && !loading && (
+      {filteredNotes.length === 0 && !loading && (
         <div className="flex flex-col items-center justify-center py-16 px-4 md:py-24">
           <div className="group relative flex w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-10 text-center sm:p-12">
             <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
