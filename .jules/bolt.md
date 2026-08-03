@@ -1,0 +1,3 @@
+## 2024-03-24 - Debouncing and loop optimizations in React searches
+**Learning:** In highly interactive React components (like search bars), uncontrolled input elements updating a state that filters a large array on every stroke can cause severe main-thread lag. Additionally, repeatedly computing loop invariants (like `string.toLowerCase()`) inside an `array.filter` compounds this performance degradation.
+**Action:** When implementing real-time search, always debounce the state update that triggers the search filtering (rather than debouncing the filter itself, which can still block the render). Extract any invariant operations (e.g. converting the search term to lowercase) outside of the filtering loop.
