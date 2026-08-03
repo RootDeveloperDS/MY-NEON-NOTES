@@ -110,10 +110,13 @@ export function NotesDashboard() {
   };
 
   const filteredNotes = useMemo(() => {
+    if (!searchTerm) return notes;
+    // Bolt Optimization: Extract invariant (lowercased term) out of filter loop to prevent O(n) redundant string operations
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
     return notes.filter(
       (note) =>
-        note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchTerm.toLowerCase())
+        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
+        note.content.toLowerCase().includes(lowercasedSearchTerm)
     );
   }, [notes, searchTerm]);
 
