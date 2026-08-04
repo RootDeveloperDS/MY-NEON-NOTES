@@ -113,13 +113,13 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
               />
             </div>
             <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-background/40 p-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} aria-label="Share note">
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} aria-label="Share note" title="Share note">
                 <Share2 className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onEdit} aria-label="Edit note">
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onEdit} aria-label="Edit note" title="Edit note">
               <FilePenLine className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onCopy} aria-label="Copy note content">
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onCopy} aria-label="Copy note content" title="Copy note content">
               <Copy className="h-4 w-4" />
             </Button>
             <Button
@@ -128,6 +128,7 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
               className="h-8 w-8 text-destructive/80 hover:text-destructive"
               onClick={onDelete}
               aria-label="Delete note"
+              title="Delete note"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
