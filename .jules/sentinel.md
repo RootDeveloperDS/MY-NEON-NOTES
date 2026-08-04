@@ -1,2 +1,0 @@
-- Added security headers (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, Referrer-Policy) to next.config.ts to mitigate clickjacking, MIME sniffing, and enforce HTTPS.
-- Sanitized user inputs in the Telegram notification API route (src/app/api/telegram/notify/route.ts) by adding an escapeHtml function to prevent HTML injection that could disrupt Telegram API parsing.
