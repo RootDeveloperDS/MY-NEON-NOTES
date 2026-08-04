@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
 import { format } from 'date-fns';
 
+function escapeHtml(unsafe: string | null | undefined): string {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
 export async function POST(req: Request) {
   try {
     const { eventType, details, userDisplayName, userEmail } = await req.json();
@@ -15,13 +26,13 @@ export async function POST(req: Request) {
     }
 
     const timestamp = format(new Date(), "yyyy-MM-dd HH:mm:ss 'UTC'");
-    const userDisplay = userDisplayName || 'Anonymous';
-    const emailHtml = userEmail ? `\n📧 <b>Email:</b> ${userEmail}` : '';
-    const detailsHtml = details ? `\n🔗 <b>Details:</b> ${details}` : '';
+    const userDisplay = escapeHtml(userDisplayName) || 'Anonymous';
+    const emailHtml = userEmail ? `\n📧 <b>Email:</b> ${escapeHtml(userEmail)}` : '';
+    const detailsHtml = details ? `\n🔗 <b>Details:</b> ${escapeHtml(details)}` : '';
 
     const message = `⚡ <b>NEON NOTES ANALYTICS</b> ⚡
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-📌 <b>Event:</b> ${eventType}
+📌 <b>Event:</b> ${escapeHtml(eventType)}
 👤 <b>User:</b> ${userDisplay}${emailHtml}${detailsHtml}
 🕒 <b>Time:</b> ${timestamp}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━`;
