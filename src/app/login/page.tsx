@@ -1,11 +1,20 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { NotesDashboard } from '@/components/notes/NotesDashboard';
+import { LoginPage } from '@/components/auth/LoginPage';
 import Image from 'next/image';
 
-export default function Home() {
-  const { loading } = useAuth();
+export default function LoginRoute() {
+  const { activeUid, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && activeUid) {
+      router.replace('/');
+    }
+  }, [activeUid, loading, router]);
 
   if (loading) {
     return (
@@ -29,9 +38,11 @@ export default function Home() {
     );
   }
 
+  if (activeUid) return null;
+
   return (
     <main className="min-h-screen bg-background text-foreground font-body">
-      <NotesDashboard />
+      <LoginPage />
     </main>
   );
 }

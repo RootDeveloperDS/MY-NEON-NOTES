@@ -3,8 +3,12 @@
 import Link from 'next/link';
 import { ExternalLink, Github, Globe, Mail, Linkedin, Twitter, Send, Monitor } from 'lucide-react';
 import Image from 'next/image';
+import { trackEvent } from '@/lib/analytics';
+import { useAuth } from '@/hooks/use-auth';
 
 export function NotesFooter() {
+  const { user } = useAuth();
+  
   return (
     <footer className="mt-14 border-t border-primary/25 bg-card/40 pb-12 pt-14 backdrop-blur-sm animate-footer-fade">
       <div className="w-full px-4 md:px-8 flex flex-col md:flex-row justify-between gap-12 md:gap-8">
@@ -38,7 +42,12 @@ export function NotesFooter() {
           <h3 className="font-semibold text-foreground tracking-widest uppercase text-xs font-headline text-primary/80">Navigation</h3>
           <nav className="flex flex-col gap-3">
             <Link href="/" className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex w-fit">Dashboard</Link>
-            <a href="https://github.com/RootDeveloperDS/MY-NEON-NOTES/" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 w-fit">
+            <a 
+              href="https://github.com/RootDeveloperDS/MY-NEON-NOTES/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              onClick={() => trackEvent('Social Click', 'Clicked GitHub Repository', user?.displayName || 'Anonymous', user?.email || null)}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 w-fit">
               GitHub Repository <ExternalLink className="h-3 w-3 opacity-70" />
             </a>
             <a href="https://github.com/RootDeveloperDS/MY-NEON-NOTES/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex w-fit">MIT License</a>
@@ -63,6 +72,7 @@ export function NotesFooter() {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackEvent('Social Click', `Clicked ${link.label}`, user?.displayName || 'Anonymous', user?.email || null)}
                 className="group relative flex h-10 w-10 items-center justify-center rounded-full bg-background border border-primary/30 text-muted-foreground shadow-[0_0_10px_hsl(var(--primary)/0.15)] transition-all duration-300 hover:border-primary hover:bg-primary/10 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.5)] hover:scale-110"
                 aria-label={link.label}
               >

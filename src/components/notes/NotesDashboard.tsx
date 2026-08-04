@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
@@ -16,14 +16,17 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { trackEvent } from '@/lib/analytics';
+import { useRouter } from 'next/navigation';
 
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
 
 export function NotesDashboard() {
-  const { activeUid, loading: authLoading, logout, isUrlAuth } = useAuth();
+  const { activeUid, user, loading: authLoading, logout, isUrlAuth } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +36,16 @@ export function NotesDashboard() {
   const [isViewerDeleteDialogOpen, setIsViewerDeleteDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [cols, setCols] = useState(1);
+  const hasTrackedVisit = useRef(false);
+
+  useEffect(() => {
+    if (!authLoading && !hasTrackedVisit.current) {
+      const userDisplay = user?.displayName || 'Anonymous';
+      const userEmail = user?.email || null;
+      trackEvent('App Visit', 'User landed on Dashboard', userDisplay, userEmail);
+      hasTrackedVisit.current = true;
+    }
+  }, [authLoading, user]);
 
   useEffect(() => {
     setMounted(true);
@@ -83,6 +96,10 @@ export function NotesDashboard() {
   }, [activeUid, authLoading]);
 
   const handleOpenModal = (note: Note | null = null) => {
+    if (!activeUid) {
+      router.push('/login');
+      return;
+    }
     setSelectedNote(note);
     setIsModalOpen(true);
   };
@@ -268,10 +285,10 @@ export function NotesDashboard() {
         </>
       )}
       
-      {activeUid && filteredNotes.length === 0 && !loading && (
+      {filteredNotes.length === 0 && !loading && (
         <div className="flex flex-col items-center justify-center py-16 px-4 md:py-24">
           <div className="group relative flex w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-10 text-center sm:p-12">
-            <div className="absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
             <div className="mb-6 rounded-full bg-primary/10 p-4 shadow-[0_0_20px_hsl(var(--primary)/0.2)] transition-transform duration-500 group-hover:scale-110">
                <FileText className="h-10 w-10 text-primary" />
             </div>
@@ -284,7 +301,7 @@ export function NotesDashboard() {
             <Button
               onClick={() => handleOpenModal()}
               variant="outline"
-              className="border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
+              className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
             >
               <Plus className="mr-2 h-4 w-4" />
               Create First Note
@@ -305,6 +322,7 @@ export function NotesDashboard() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         note={selectedNote}
+        isFirstNote={notes.length === 0}
       />
 
       {viewingNote && (

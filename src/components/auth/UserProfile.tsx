@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ import {
 export function UserProfile() {
   const { user, activeUid, logout, isUrlAuth } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,6 +58,18 @@ export function UserProfile() {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  if (!activeUid) {
+    return (
+      <Button 
+        onClick={() => router.push('/login')} 
+        variant="outline" 
+        className="h-9 font-note text-sm border-primary/50 text-primary hover:bg-primary/10 transition-colors"
+      >
+        Sign In
+      </Button>
+    );
+  }
 
   return (
     <>
