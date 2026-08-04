@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
@@ -95,14 +95,14 @@ export function NotesDashboard() {
     return () => unsubscribe();
   }, [activeUid, authLoading]);
 
-  const handleOpenModal = (note: Note | null = null) => {
+  const handleOpenModal = useCallback((note: Note | null = null) => {
     if (!activeUid) {
       router.push('/login');
       return;
     }
     setSelectedNote(note);
     setIsModalOpen(true);
-  };
+  }, [activeUid, router]);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -158,9 +158,9 @@ export function NotesDashboard() {
     }
   }, [latestViewingNote, viewingNote]);
 
-  const handleViewNote = (note: Note) => {
+  const handleViewNote = useCallback((note: Note) => {
     setViewingNote(note);
-  };
+  }, []);
 
   const handleCopyViewerNote = () => {
     if (!viewingNote) return;
@@ -224,8 +224,8 @@ export function NotesDashboard() {
                     <NoteCard
                       key={note.id}
                       note={note}
-                      onView={() => handleViewNote(note)}
-                      onEdit={() => handleOpenModal(note)}
+                      onView={handleViewNote}
+                      onEdit={handleOpenModal}
                     />
                   ))}
                 </div>
@@ -237,8 +237,8 @@ export function NotesDashboard() {
                         <NoteCard
                           key={note.id}
                           note={note}
-                          onView={() => handleViewNote(note)}
-                          onEdit={() => handleOpenModal(note)}
+                          onView={handleViewNote}
+                          onEdit={handleOpenModal}
                         />
                       ))}
                     </div>
