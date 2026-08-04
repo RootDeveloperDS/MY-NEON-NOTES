@@ -11,6 +11,7 @@ import { detectCodeBlock, type DetectedLanguage } from '@/lib/code-detect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -175,8 +176,15 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
               <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting || !activeUid} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                {isSubmitting ? 'Saving...' : 'Save Note'}
+              <Button type="submit" disabled={isSubmitting || !activeUid} aria-busy={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90 flex items-center">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Note'
+                )}
               </Button>
             </DialogFooter>
           </form>
