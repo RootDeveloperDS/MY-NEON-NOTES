@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 import type { Note } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -14,11 +14,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 interface NoteCardProps {
   note: Note;
-  onEdit: () => void;
-  onView: () => void;
+  onEdit: (note: Note) => void;
+  onView: (note: Note) => void;
 }
 
-export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
+// Bolt Optimization: Wrap NoteCard with React.memo to prevent unnecessary re-renders when parent state changes.
+export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -49,7 +50,11 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
 
   const handleEditClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    onEdit();
+    onEdit(note);
+  };
+
+  const handleView = () => {
+    onView(note);
   };
 
   const handleCopyClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -89,7 +94,8 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
     }
   };
   
-  const codeDetection = detectCodeBlock(note.content);
+  // Bolt Optimization: Memoize expensive code detection using useMemo to avoid running heavy regex on every render.
+  const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
   
   const languageLabels: Record<string, string> = {
     javascript: 'JavaScript',
@@ -110,7 +116,7 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   return (
     <>
       <div
-        onClick={onView}
+        onClick={handleView}
         className="group relative flex flex-col w-full border border-primary/20 bg-card/60 hover:bg-card/90 transition-all duration-300 rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)] hover:-translate-y-1"
       >
         {/* Top Accent line */}
@@ -190,4 +196,4 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
       </AlertDialog>
     </>
   );
-}
+});
