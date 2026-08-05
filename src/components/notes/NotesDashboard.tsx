@@ -4,11 +4,13 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
+import dynamic from 'next/dynamic';
 import { NotesHeader } from '@/components/notes/NotesHeader';
 import { NoteCard } from '@/components/notes/NoteCard';
-import { NoteModal } from '@/components/notes/NoteModal';
-import { NoteViewer } from '@/components/notes/NoteViewer';
 import { NotesFooter } from '@/components/notes/NotesFooter';
+
+const NoteModal = dynamic(() => import('@/components/notes/NoteModal').then(mod => mod.NoteModal), { ssr: false });
+const NoteViewer = dynamic(() => import('@/components/notes/NoteViewer').then(mod => mod.NoteViewer), { ssr: false });
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
@@ -34,6 +36,7 @@ export function NotesDashboard() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [isViewerDeleteDialogOpen, setIsViewerDeleteDialogOpen] = useState(false);
+  const [hasOpenedModal, setHasOpenedModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [cols, setCols] = useState(1);
   const hasTrackedVisit = useRef(false);
@@ -103,6 +106,12 @@ export function NotesDashboard() {
     setSelectedNote(note);
     setIsModalOpen(true);
   }, [activeUid, router]);
+
+  useEffect(() => {
+    if (isModalOpen && !hasOpenedModal) {
+      setHasOpenedModal(true);
+    }
+  }, [isModalOpen, hasOpenedModal]);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -322,12 +331,14 @@ export function NotesDashboard() {
         <Plus className="h-8 w-8" />
       </Button>
 
-      <NoteModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        note={selectedNote}
-        isFirstNote={notes.length === 0}
-      />
+      {hasOpenedModal && (
+        <NoteModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          note={selectedNote}
+          isFirstNote={notes.length === 0}
+        />
+      )}
 
       {viewingNote && (
         <div className="fixed inset-0 z-50 bg-background p-4 sm:p-6 lg:hidden">
