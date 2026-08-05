@@ -317,6 +317,7 @@ export function NotesDashboard() {
         onClick={() => handleOpenModal()}
         className="fixed bottom-4 right-4 z-30 md:bottom-8 md:right-8 h-14 w-14 md:h-16 md:w-16 rounded-full bg-primary text-primary-foreground shadow-lg animate-neon-glow"
         aria-label="Add new note"
+        title="Add new note"
       >
         <Plus className="h-8 w-8" />
       </Button>
