@@ -9,8 +9,10 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { detectCodeBlock } from '@/lib/code-detect';
-import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
+import dynamic from 'next/dynamic';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
+const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
 
 interface NoteCardProps {
   note: Note;

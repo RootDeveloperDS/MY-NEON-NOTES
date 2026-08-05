@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Copy, FilePenLine, Trash2, Globe, Share2 } from 'lucide-react';
 import { detectCodeBlock } from '@/lib/code-detect';
-import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
+import dynamic from 'next/dynamic';
 import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+
+const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
 
 interface NoteViewerProps {
   note: Note;
