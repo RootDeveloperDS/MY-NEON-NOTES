@@ -156,7 +156,7 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border border-accent/20 bg-accent/5 p-4 shadow-sm">
                     <div className="space-y-1">
-                      <FormLabel className="text-sm font-medium">Make Publicly Shareable</FormLabel>
+                      <FormLabel className="text-sm font-medium cursor-pointer">Make Publicly Shareable</FormLabel>
                       <p className="text-xs text-muted-foreground">
                         Anyone with the link can view this note (read-only).
                       </p>

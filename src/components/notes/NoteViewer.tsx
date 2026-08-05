@@ -102,7 +102,7 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
           </div>
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
             <div className="flex items-center gap-2 sm:mr-2 sm:border-r border-primary/20 sm:pr-4">
-              <Label htmlFor="public-toggle" className="text-xs text-muted-foreground whitespace-nowrap">
+              <Label htmlFor="public-toggle" className="text-xs text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors">
                 Public Share
               </Label>
               <Switch
