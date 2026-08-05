@@ -1,4 +1,0 @@
-## 2025-02-23 - Authentication Bypass via URL UID Fallback
-**Vulnerability:** The application featured a fallback mechanism in `use-auth.tsx` where an arbitrary `UID` parameter from the URL was trusted and set as the active session ID, bypassing secure token validation if the backend failed to return a custom token.
-**Learning:** Never trust client-provided identifiers for authentication without cryptographic verification (e.g., custom tokens or ID tokens). Blindly trusting a URL parameter allows attackers to access and manipulate data belonging to other users simply by changing the ID in the URL.
-**Prevention:** Strictly enforce token-based authentication. If an external authentication flow fails to produce a secure, verifiable token, the login attempt must be hard-rejected rather than falling back to an unverified mode.

@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server';
 import { format } from 'date-fns';
+import { z } from 'zod';
+
+const NotifySchema = z.object({
+  eventType: z.string().max(255, "Event type too long"),
+  details: z.string().max(5000, "Details too long").optional().nullable(),
+  userDisplayName: z.string().max(255, "Display name too long").optional().nullable(),
+  userEmail: z.string().max(255, "Email too long").optional().nullable(),
+});
 
 function escapeHtml(unsafe: string | null | undefined): string {
   if (!unsafe) return '';
@@ -14,7 +22,15 @@ function escapeHtml(unsafe: string | null | undefined): string {
 
 export async function POST(req: Request) {
   try {
-    const { eventType, details, userDisplayName, userEmail } = await req.json();
+    const rawBody = await req.json();
+    const parseResult = NotifySchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      console.warn("Invalid telegram notification payload:", parseResult.error);
+      return NextResponse.json({ success: false, error: "Invalid payload" }, { status: 400 });
+    }
+
+    const { eventType, details, userDisplayName, userEmail } = parseResult.data;
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
