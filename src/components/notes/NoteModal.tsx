@@ -21,8 +21,8 @@ import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
 import { trackEvent } from '@/lib/analytics';
 
 const noteFormSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(100),
-  content: z.string().min(1, 'Content is required'),
+  title: z.string().min(1, 'Title is required').max(100, 'Title is too long (max 100 characters)'),
+  content: z.string().min(1, 'Content is required').max(100000, 'Content is too long (max 100,000 characters)'),
   isPublic: z.boolean().default(false),
 });
 
