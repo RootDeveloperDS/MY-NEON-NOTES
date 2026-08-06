@@ -10,11 +10,11 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Orbitron', 'sans-serif'],
-        headline: ['Orbitron', 'sans-serif'],
-        note: ['"Source Code Pro"', 'monospace'],
+        body: ['var(--font-orbitron)', 'sans-serif'],
+        headline: ['var(--font-orbitron)', 'sans-serif'],
+        note: ['var(--font-source-code-pro)', 'monospace'],
         code: ['monospace'],
-        'auth-input': ['Roboto', 'sans-serif'],
+        'auth-input': ['var(--font-roboto)', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
