@@ -52,16 +52,30 @@ export function NotesDashboard() {
 
   useEffect(() => {
     setMounted(true);
+    let resizeTimer: NodeJS.Timeout;
     const handleResize = () => {
-      const width = window.innerWidth;
-      if (width >= 1280) setCols(4);
-      else if (width >= 1024) setCols(3);
-      else if (width >= 640) setCols(2);
-      else setCols(1);
+      // Bolt Optimization: Debounce window resize to prevent excessive re-renders of the masonry grid layout during resizing.
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const width = window.innerWidth;
+        if (width >= 1280) setCols(4);
+        else if (width >= 1024) setCols(3);
+        else if (width >= 640) setCols(2);
+        else setCols(1);
+      }, 100);
     };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    // Initial evaluation doesn't need delay
+    const width = window.innerWidth;
+    if (width >= 1280) setCols(4);
+    else if (width >= 1024) setCols(3);
+    else if (width >= 640) setCols(2);
+    else setCols(1);
+
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => {
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   useEffect(() => {

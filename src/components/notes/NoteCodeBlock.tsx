@@ -25,6 +25,8 @@ const loadPrismLanguages = () => {
   if (!prismReadyPromise) {
     prismReadyPromise = (async () => {
       ensurePrismGlobal();
+      // Sequential imports are required because Prism languages have strict inter-dependencies
+      // (e.g. javascript depends on clike, cpp depends on c)
       await import('prismjs/components/prism-markup');
       await import('prismjs/components/prism-markup-templating');
       await import('prismjs/components/prism-clike');
