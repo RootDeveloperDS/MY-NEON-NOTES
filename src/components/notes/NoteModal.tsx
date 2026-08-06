@@ -131,7 +131,7 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
                   <FormItem>
                     <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter note title..." {...field} className="font-note" />
+                      <Input placeholder="Enter note title..." {...field} className="font-note" autoFocus />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
