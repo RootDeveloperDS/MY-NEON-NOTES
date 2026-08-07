@@ -5,9 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
-import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
+import dynamic from 'next/dynamic';
 import { detectCodeBlock } from '@/lib/code-detect';
 import { Loader } from 'lucide-react';
+
+const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
 import { format } from 'date-fns';
 import { Globe, FileCode2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
