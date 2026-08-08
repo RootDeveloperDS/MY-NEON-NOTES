@@ -107,6 +107,7 @@ export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
             rel="noopener noreferrer"
             onClick={() => trackEvent('Social Click', 'Clicked GitHub Repository (Header)', user?.displayName || 'Anonymous', user?.email || null)}
             aria-label="Open Neon Notes GitHub repository in a new tab"
+            title="Open Neon Notes GitHub repository in a new tab"
             className="flex items-center gap-2"
           >
             <Github className="h-4 w-4" />
