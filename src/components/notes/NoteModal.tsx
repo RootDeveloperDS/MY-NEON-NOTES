@@ -7,7 +7,6 @@ import * as z from 'zod';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
-import { detectCodeBlock, type DetectedLanguage } from '@/lib/code-detect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -17,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
 import { trackEvent } from '@/lib/analytics';
 
 const noteFormSchema = z.object({
