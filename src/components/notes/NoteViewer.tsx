@@ -82,6 +82,7 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
+                aria-label="Go back to notes list"
                 className="mb-2 h-8 px-2 text-muted-foreground hover:text-primary"
               >
                 <ArrowLeft className="mr-1 h-4 w-4" />

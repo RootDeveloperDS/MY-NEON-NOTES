@@ -115,10 +115,20 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
 
   const relativeTime = note.updatedAt ? formatDistanceToNow(note.updatedAt.toDate()).replace('about ', '').trim() : 'just now';
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleView();
+    }
+  };
+
   return (
     <>
       <div
         onClick={handleView}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="button"
         className="group relative flex flex-col w-full border border-primary/20 bg-card/60 hover:bg-card/90 transition-all duration-300 rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)] hover:-translate-y-1"
       >
         {/* Top Accent line */}
