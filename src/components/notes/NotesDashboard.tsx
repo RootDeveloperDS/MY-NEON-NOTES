@@ -328,6 +328,7 @@ export function NotesDashboard() {
               onClick={() => handleOpenModal()}
               variant="outline"
               className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
+              aria-label="Create First Note"
             >
               <Plus className="mr-2 h-4 w-4" />
               Create First Note
