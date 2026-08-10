@@ -284,7 +284,7 @@ export function NotesDashboard() {
                         key={note.id}
                         type="button"
                         onClick={() => handleViewNote(note)}
-                        className={`w-full rounded-lg border p-3 text-left transition-all duration-200 ${
+                        className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                           isActive
                             ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
                             : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
