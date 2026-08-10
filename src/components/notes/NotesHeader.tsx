@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, memo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Github, ExternalLink } from 'lucide-react';
@@ -14,7 +14,8 @@ interface NotesHeaderProps {
   onSearchChange: (term: string) => void;
 }
 
-export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
+// Bolt Optimization: Wrap NotesHeader with React.memo to prevent unnecessary re-renders when dashboard state (like viewingNote) updates.
+export const NotesHeader = memo(function NotesHeader({ onSearchChange }: NotesHeaderProps) {
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   // Bolt Optimization: Added debounce timer ref to prevent state updates on every keystroke
@@ -120,4 +121,4 @@ export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
       </div>
     </header>
   );
-}
+});
