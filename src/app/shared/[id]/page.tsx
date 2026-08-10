@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -94,7 +94,8 @@ export default function SharedNotePage() {
     );
   }
 
-  const codeDetection = detectCodeBlock(note.content);
+  // Bolt Optimization: Memoize expensive code detection using useMemo to avoid running heavy regex on every render (e.g. when copying link/content).
+  const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
 
   const languageLabels: Record<string, string> = {
     javascript: 'JavaScript',

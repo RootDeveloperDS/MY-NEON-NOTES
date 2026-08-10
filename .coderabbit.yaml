@@ -13,7 +13,3 @@ reviews:
     - **Removal Breakdown**: For deleted code/files, explain explicitly why it was safe to remove and what took its place.
     - **Potential Breakages**: Flag any missing edge-case handling or regression risks.
 
-path_filters:
-  - "!**/*.patch"
-  - "!**/*.log"
-  - "!**/*.tmp"
