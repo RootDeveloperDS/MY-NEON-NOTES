@@ -126,9 +126,10 @@ export function LoginPage() {
             </TabsList>
 
             <Form {...form}>
-              <form>
+              <>
                 <TabsContent value="signin" className="space-y-3 pt-3">
-                  <AuthFormFields form={form} />
+                  <form onSubmit={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))}>
+                    <AuthFormFields form={form} />
                   
                   <div className="flex items-center justify-between px-1 py-1">
                     <div className="flex items-center gap-2">
@@ -154,16 +155,18 @@ export function LoginPage() {
                   </div>
 
                   <Button 
-                    onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))} 
+                    type="submit"
                     disabled={!!loading} 
                     className="w-full mt-1"
                   >
                     {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign In'}
                   </Button>
+                  </form>
                 </TabsContent>
 
                 <TabsContent value="signup" className="space-y-3 pt-3">
-                  <AuthFormFields form={form} />
+                  <form onSubmit={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))}>
+                    <AuthFormFields form={form} />
                   
                   <div className="flex items-center gap-2 px-1 py-1">
                     <Switch
@@ -178,14 +181,15 @@ export function LoginPage() {
                   </div>
 
                   <Button 
-                    onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))} 
+                    type="submit"
                     disabled={!!loading} 
                     className="w-full mt-1"
                   >
                     {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign Up'}
                   </Button>
+                  </form>
                 </TabsContent>
-              </form>
+              </>
             </Form>
           </Tabs>
           

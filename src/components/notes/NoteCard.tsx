@@ -129,7 +129,7 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
         onKeyDown={handleKeyDown}
         tabIndex={0}
         role="button"
-        className="group relative flex flex-col w-full border border-primary/20 bg-card/60 hover:bg-card/90 transition-all duration-300 rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)] hover:-translate-y-1"
+        className="group relative flex flex-col w-full border border-primary/20 bg-card/60 hover:bg-card/90 transition-all duration-300 rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)] hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         {/* Top Accent line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary/30 group-hover:bg-primary transition-colors duration-500 shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
