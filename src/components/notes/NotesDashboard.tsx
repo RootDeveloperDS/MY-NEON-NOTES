@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 import { NotesHeader } from '@/components/notes/NotesHeader';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { NotesFooter } from '@/components/notes/NotesFooter';
+import { memo } from 'react';
 
 const NoteModal = dynamic(() => import('@/components/notes/NoteModal').then(mod => mod.NoteModal), { ssr: false });
 const NoteViewer = dynamic(() => import('@/components/notes/NoteViewer').then(mod => mod.NoteViewer), { ssr: false });
@@ -24,6 +25,27 @@ import { useRouter } from 'next/navigation';
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
+
+const SidebarNoteItem = memo(function SidebarNoteItem({ note, isActive, onClick }: { note: Note, isActive: boolean, onClick: (note: Note) => void }) {
+  const relativeTime = note.updatedAt
+    ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })
+    : 'just now';
+
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(note)}
+      className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+        isActive
+          ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
+          : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
+      }`}
+    >
+      <p className="truncate font-note text-sm text-primary">{note.title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{relativeTime}</p>
+    </button>
+  );
+});
 
 export function NotesDashboard() {
   const { activeUid, user, loading: authLoading, logout, isUrlAuth } = useAuth();
@@ -185,14 +207,23 @@ export function NotesDashboard() {
     setViewingNote(note);
   }, []);
 
-  const handleCopyViewerNote = () => {
+  // Bolt Optimization: Memoize callbacks for NoteViewer to prevent re-renders
+  const handleBackViewerNote = useCallback(() => setViewingNote(null), []);
+
+  const handleEditViewerNote = useCallback(() => {
+    if (viewingNote) handleOpenModal(viewingNote);
+  }, [viewingNote, handleOpenModal]);
+
+  const handleDeleteViewerNoteRequest = useCallback(() => setIsViewerDeleteDialogOpen(true), []);
+
+  const handleCopyViewerNote = useCallback(() => {
     if (!viewingNote) return;
     navigator.clipboard.writeText(viewingNote.content);
     toast({
       title: 'Note Copied',
       description: 'The note content has been copied to your clipboard.',
     });
-  };
+  }, [viewingNote, toast]);
 
   const handleDeleteViewerNote = async () => {
     if (!viewingNote) return;
@@ -273,37 +304,23 @@ export function NotesDashboard() {
               <div className={`mt-8 transition-all duration-300 lg:grid ${splitViewMinHeightClass} ${splitViewGridClass} lg:gap-5`}>
               <aside className="hidden lg:block overflow-y-auto pr-1">
                 <div className="space-y-2">
-                  {filteredNotes.map((note) => {
-                    const isActive = note.id === viewingNote.id;
-                    const relativeTime = note.updatedAt
-                      ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })
-                      : 'just now';
-
-                    return (
-                      <button
-                        key={note.id}
-                        type="button"
-                        onClick={() => handleViewNote(note)}
-                        className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                          isActive
-                            ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
-                            : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
-                        }`}
-                      >
-                        <p className="truncate font-note text-sm text-primary">{note.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{relativeTime}</p>
-                      </button>
-                    );
-                  })}
+                  {filteredNotes.map((note) => (
+                    <SidebarNoteItem
+                      key={note.id}
+                      note={note}
+                      isActive={note.id === viewingNote.id}
+                      onClick={handleViewNote}
+                    />
+                  ))}
                 </div>
               </aside>
               <div className="hidden min-w-0 lg:block">
                 <NoteViewer
                   note={viewingNote}
-                  onBack={() => setViewingNote(null)}
-                  onEdit={() => handleOpenModal(viewingNote)}
+                  onBack={handleBackViewerNote}
+                  onEdit={handleEditViewerNote}
                   onCopy={handleCopyViewerNote}
-                  onDelete={() => setIsViewerDeleteDialogOpen(true)}
+                  onDelete={handleDeleteViewerNoteRequest}
                 />
               </div>
             </div>
@@ -359,10 +376,10 @@ export function NotesDashboard() {
           <div className="h-full">
             <NoteViewer
               note={viewingNote}
-              onBack={() => setViewingNote(null)}
-              onEdit={() => handleOpenModal(viewingNote)}
+              onBack={handleBackViewerNote}
+              onEdit={handleEditViewerNote}
               onCopy={handleCopyViewerNote}
-              onDelete={() => setIsViewerDeleteDialogOpen(true)}
+              onDelete={handleDeleteViewerNoteRequest}
             />
           </div>
         </div>
