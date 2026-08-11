@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, memo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Github, ExternalLink } from 'lucide-react';
@@ -14,9 +14,12 @@ interface NotesHeaderProps {
   onSearchChange: (term: string) => void;
 }
 
-export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
+// Bolt Optimization: Wrap NotesHeader with React.memo to prevent unnecessary re-renders when dashboard state (like viewingNote) updates.
+export const NotesHeader = memo(function NotesHeader({ onSearchChange }: NotesHeaderProps) {
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
+  // Bolt Optimization: Added debounce timer ref to prevent state updates on every keystroke
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [kbdShortcut, setKbdShortcut] = useState('Ctrl');
 
   useEffect(() => {
@@ -24,6 +27,12 @@ export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
       const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
       setKbdShortcut(isMac ? '⌘' : 'Ctrl');
     }
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -68,7 +77,16 @@ export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
             type="search"
             placeholder="Search notes..."
             className="pl-10 pr-16 h-11 focus-visible:ring-primary/50 focus-visible:shadow-[0_0_15px_hsl(var(--primary)/0.3)] transition-all duration-300"
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={(e) => {
+              // Bolt Optimization: Debounce search input to prevent main thread blocking during typing
+              if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+              }
+              const value = e.target.value;
+              debounceTimerRef.current = setTimeout(() => {
+                onSearchChange(value);
+              }, 300);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 inputRef.current?.blur();
@@ -103,4 +121,4 @@ export function NotesHeader({ onSearchChange }: NotesHeaderProps) {
       </div>
     </header>
   );
-}
+});

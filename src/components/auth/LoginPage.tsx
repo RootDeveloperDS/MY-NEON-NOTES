@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader } from 'lucide-react';
 import Image from 'next/image';
+import { trackEvent } from '@/lib/analytics';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -46,6 +47,7 @@ export function LoginPage() {
     setLoading('google');
     try {
       await signInWithGoogle(persistenceMode);
+      trackEvent('User Sign-In', 'Google Authentication');
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Sign-in Error', description: error.message });
       setLoading(false);
@@ -57,9 +59,11 @@ export function LoginPage() {
     try {
       if (action === 'signIn') {
         await signInWithEmail(values.email, values.password, persistenceMode);
+        trackEvent('User Sign-In', 'Email Authentication', null, values.email);
       } else {
         await signUpWithEmail(values.email, values.password, persistenceMode);
         toast({ title: 'Account Created', description: "You've been signed up successfully!" });
+        trackEvent('User Sign-Up', 'Email Registration', null, values.email);
       }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -126,9 +130,10 @@ export function LoginPage() {
             </TabsList>
 
             <Form {...form}>
-              <form>
+              <>
                 <TabsContent value="signin" className="space-y-3 pt-3">
-                  <AuthFormFields form={form} />
+                  <form onSubmit={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))}>
+                    <AuthFormFields form={form} />
                   
                   <div className="flex items-center justify-between px-1 py-1">
                     <div className="flex items-center gap-2">
@@ -154,16 +159,18 @@ export function LoginPage() {
                   </div>
 
                   <Button 
-                    onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))} 
+                    type="submit"
                     disabled={!!loading} 
                     className="w-full mt-1"
                   >
                     {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign In'}
                   </Button>
+                  </form>
                 </TabsContent>
 
                 <TabsContent value="signup" className="space-y-3 pt-3">
-                  <AuthFormFields form={form} />
+                  <form onSubmit={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))}>
+                    <AuthFormFields form={form} />
                   
                   <div className="flex items-center gap-2 px-1 py-1">
                     <Switch
@@ -178,14 +185,15 @@ export function LoginPage() {
                   </div>
 
                   <Button 
-                    onClick={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))} 
+                    type="submit"
                     disabled={!!loading} 
                     className="w-full mt-1"
                   >
                     {loading === 'email' ? <Loader className="animate-spin" /> : 'Sign Up'}
                   </Button>
+                  </form>
                 </TabsContent>
-              </form>
+              </>
             </Form>
           </Tabs>
           

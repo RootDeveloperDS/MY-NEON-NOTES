@@ -7,21 +7,20 @@ import * as z from 'zod';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
-import { detectCodeBlock, type DetectedLanguage } from '@/lib/code-detect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
 import { trackEvent } from '@/lib/analytics';
 
 const noteFormSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(100),
-  content: z.string().min(1, 'Content is required'),
+  title: z.string().min(1, 'Title is required').max(100, 'Title is too long (max 100 characters)'),
+  content: z.string().min(1, 'Content is required').max(100000, 'Content is too long (max 100,000 characters)'),
   isPublic: z.boolean().default(false),
 });
 
@@ -79,6 +78,15 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
 
     try {
       if (note) {
+        if (note.userId !== activeUid) {
+          toast({
+            variant: 'destructive',
+            title: 'Authorization Error',
+            description: 'You are not authorized to edit this note.',
+          });
+          return;
+        }
+
         // Update existing note, ensuring userId is preserved
         const noteRef = doc(db, 'notes', note.id);
         await setDoc(noteRef, { 
@@ -87,6 +95,7 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           updatedAt: serverTimestamp() 
         }, { merge: true });
         toast({ title: 'Note Updated', description: 'Your note has been successfully updated.' });
+        trackEvent('Update Note', `Updated note titled: "${data.title}"`, user?.displayName || 'Anonymous', user?.email || null);
       } else {
         // Create new note with the current user's ID
         await addDoc(collection(db, 'notes'), { 
@@ -96,10 +105,12 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           updatedAt: serverTimestamp() 
         });
         toast({ title: 'Note Created', description: 'Your new note has been saved.' });
+        const userDisplay = user?.displayName || 'Anonymous';
+        const userEmail = user?.email || null;
         if (isFirstNote) {
-          const userDisplay = user?.displayName || 'Anonymous';
-          const userEmail = user?.email || null;
           trackEvent('First Note Created', 'User created their very first note', userDisplay, userEmail);
+        } else {
+          trackEvent('Create Note', `Created note titled: "${data.title}"`, userDisplay, userEmail);
         }
       }
       onClose();
@@ -130,7 +141,7 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
                   <FormItem>
                     <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter note title..." {...field} className="font-note" />
+                      <Input placeholder="Enter note title..." {...field} className="font-note" autoFocus />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,7 +166,7 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border border-accent/20 bg-accent/5 p-4 shadow-sm">
                     <div className="space-y-1">
-                      <FormLabel className="text-sm font-medium">Make Publicly Shareable</FormLabel>
+                      <FormLabel className="text-sm font-medium cursor-pointer">Make Publicly Shareable</FormLabel>
                       <p className="text-xs text-muted-foreground">
                         Anyone with the link can view this note (read-only).
                       </p>
@@ -175,8 +186,15 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
               <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting || !activeUid} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                {isSubmitting ? 'Saving...' : 'Save Note'}
+              <Button type="submit" disabled={isSubmitting || !activeUid} aria-busy={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90 flex items-center">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Note'
+                )}
               </Button>
             </DialogFooter>
           </form>

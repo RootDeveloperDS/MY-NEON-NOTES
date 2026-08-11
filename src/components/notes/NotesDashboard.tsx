@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
+import dynamic from 'next/dynamic';
 import { NotesHeader } from '@/components/notes/NotesHeader';
 import { NoteCard } from '@/components/notes/NoteCard';
-import { NoteModal } from '@/components/notes/NoteModal';
-import { NoteViewer } from '@/components/notes/NoteViewer';
 import { NotesFooter } from '@/components/notes/NotesFooter';
+
+const NoteModal = dynamic(() => import('@/components/notes/NoteModal').then(mod => mod.NoteModal), { ssr: false });
+const NoteViewer = dynamic(() => import('@/components/notes/NoteViewer').then(mod => mod.NoteViewer), { ssr: false });
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
@@ -34,6 +36,7 @@ export function NotesDashboard() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [isViewerDeleteDialogOpen, setIsViewerDeleteDialogOpen] = useState(false);
+  const [hasOpenedModal, setHasOpenedModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [cols, setCols] = useState(1);
   const hasTrackedVisit = useRef(false);
@@ -49,16 +52,30 @@ export function NotesDashboard() {
 
   useEffect(() => {
     setMounted(true);
+    let resizeTimer: NodeJS.Timeout;
     const handleResize = () => {
-      const width = window.innerWidth;
-      if (width >= 1280) setCols(4);
-      else if (width >= 1024) setCols(3);
-      else if (width >= 640) setCols(2);
-      else setCols(1);
+      // Bolt Optimization: Debounce window resize to prevent excessive re-renders of the masonry grid layout during resizing.
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const width = window.innerWidth;
+        if (width >= 1280) setCols(4);
+        else if (width >= 1024) setCols(3);
+        else if (width >= 640) setCols(2);
+        else setCols(1);
+      }, 100);
     };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    // Initial evaluation doesn't need delay
+    const width = window.innerWidth;
+    if (width >= 1280) setCols(4);
+    else if (width >= 1024) setCols(3);
+    else if (width >= 640) setCols(2);
+    else setCols(1);
+
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => {
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -95,14 +112,20 @@ export function NotesDashboard() {
     return () => unsubscribe();
   }, [activeUid, authLoading]);
 
-  const handleOpenModal = (note: Note | null = null) => {
+  const handleOpenModal = useCallback((note: Note | null = null) => {
     if (!activeUid) {
       router.push('/login');
       return;
     }
     setSelectedNote(note);
     setIsModalOpen(true);
-  };
+  }, [activeUid, router]);
+
+  useEffect(() => {
+    if (isModalOpen && !hasOpenedModal) {
+      setHasOpenedModal(true);
+    }
+  }, [isModalOpen, hasOpenedModal]);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -110,10 +133,13 @@ export function NotesDashboard() {
   };
 
   const filteredNotes = useMemo(() => {
+    if (!searchTerm) return notes;
+    // Bolt Optimization: Extract invariant (lowercased term) out of filter loop to prevent O(n) redundant string operations
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
     return notes.filter(
       (note) =>
-        note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchTerm.toLowerCase())
+        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
+        note.content.toLowerCase().includes(lowercasedSearchTerm)
     );
   }, [notes, searchTerm]);
 
@@ -155,9 +181,9 @@ export function NotesDashboard() {
     }
   }, [latestViewingNote, viewingNote]);
 
-  const handleViewNote = (note: Note) => {
+  const handleViewNote = useCallback((note: Note) => {
     setViewingNote(note);
-  };
+  }, []);
 
   const handleCopyViewerNote = () => {
     if (!viewingNote) return;
@@ -166,6 +192,7 @@ export function NotesDashboard() {
       title: 'Note Copied',
       description: 'The note content has been copied to your clipboard.',
     });
+    trackEvent('Copy Note', `Copied content of note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
   };
 
   const handleDeleteViewerNote = async () => {
@@ -177,6 +204,7 @@ export function NotesDashboard() {
         title: 'Note Deleted',
         description: 'The note has been successfully deleted.',
       });
+      trackEvent('Delete Note', `Deleted note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
       setViewingNote(null);
     } catch (error) {
       toast({
@@ -221,8 +249,8 @@ export function NotesDashboard() {
                     <NoteCard
                       key={note.id}
                       note={note}
-                      onView={() => handleViewNote(note)}
-                      onEdit={() => handleOpenModal(note)}
+                      onView={handleViewNote}
+                      onEdit={handleOpenModal}
                     />
                   ))}
                 </div>
@@ -234,8 +262,8 @@ export function NotesDashboard() {
                         <NoteCard
                           key={note.id}
                           note={note}
-                          onView={() => handleViewNote(note)}
-                          onEdit={() => handleOpenModal(note)}
+                          onView={handleViewNote}
+                          onEdit={handleOpenModal}
                         />
                       ))}
                     </div>
@@ -258,7 +286,7 @@ export function NotesDashboard() {
                         key={note.id}
                         type="button"
                         onClick={() => handleViewNote(note)}
-                        className={`w-full rounded-lg border p-3 text-left transition-all duration-200 ${
+                        className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                           isActive
                             ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
                             : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
@@ -314,16 +342,19 @@ export function NotesDashboard() {
         onClick={() => handleOpenModal()}
         className="fixed bottom-4 right-4 z-30 md:bottom-8 md:right-8 h-14 w-14 md:h-16 md:w-16 rounded-full bg-primary text-primary-foreground shadow-lg animate-neon-glow"
         aria-label="Add new note"
+        title="Add new note"
       >
         <Plus className="h-8 w-8" />
       </Button>
 
-      <NoteModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        note={selectedNote}
-        isFirstNote={notes.length === 0}
-      />
+      {hasOpenedModal && (
+        <NoteModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          note={selectedNote}
+          isFirstNote={notes.length === 0}
+        />
+      )}
 
       {viewingNote && (
         <div className="fixed inset-0 z-50 bg-background p-4 sm:p-6 lg:hidden">

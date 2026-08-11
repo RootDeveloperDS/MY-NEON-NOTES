@@ -113,6 +113,10 @@ Firestore
 - [x] Mobile Responsive Optimization
 - [x] Keyboard Shortcuts (Ctrl/Cmd + K Global Search)
 - [x] Public Note Sharing Architecture (v11.0)
+- [x] SEO & AI Platform Discovery Suite (v12.0)
+- [x] Vercel Speed Insights & Real-User Core Web Vitals (v12.0)
+
+> 📜 **Detailed Release History**: See [CHANGELOG.md](CHANGELOG.md) for full version logs.
 
 **Upcoming**
 - [ ] Markdown Preview

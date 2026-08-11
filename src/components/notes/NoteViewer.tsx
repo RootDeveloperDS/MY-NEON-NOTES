@@ -1,18 +1,20 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Note } from '@/lib/types';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Copy, FilePenLine, Trash2, Globe, Share2 } from 'lucide-react';
+import { ArrowLeft, Copy, FilePenLine, Trash2, Globe, Share2, Check } from 'lucide-react';
 import { detectCodeBlock } from '@/lib/code-detect';
-import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
+import dynamic from 'next/dynamic';
 import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+
+const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
 
 interface NoteViewerProps {
   note: Note;
@@ -27,6 +29,8 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
   const updatedAt = note.updatedAt ? format(note.updatedAt.toDate(), 'PPp') : 'Unknown';
   const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
   const { toast } = useToast();
+  const [isCopied, setIsCopied] = useState(false);
+  const [isShared, setIsShared] = useState(false);
 
   const handleShareClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -46,6 +50,8 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
       }
       const shareUrl = `${window.location.origin}/shared/${note.id}`;
       await navigator.clipboard.writeText(shareUrl);
+      setIsShared(true);
+      setTimeout(() => setIsShared(false), 2000);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -80,6 +86,7 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
+                aria-label="Go back to notes list"
                 className="mb-2 h-8 px-2 text-muted-foreground hover:text-primary"
               >
                 <ArrowLeft className="mr-1 h-4 w-4" />
@@ -102,7 +109,7 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
           </div>
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
             <div className="flex items-center gap-2 sm:mr-2 sm:border-r border-primary/20 sm:pr-4">
-              <Label htmlFor="public-toggle" className="text-xs text-muted-foreground whitespace-nowrap">
+              <Label htmlFor="public-toggle" className="text-xs text-muted-foreground whitespace-nowrap cursor-pointer hover:text-foreground transition-colors">
                 Public Share
               </Label>
               <Switch
@@ -113,14 +120,14 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
               />
             </div>
             <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-background/40 p-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} aria-label="Share note">
-                <Share2 className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} aria-label="Share note" title="Share note">
+                {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onEdit} aria-label="Edit note">
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onEdit} aria-label="Edit note" title="Edit note">
               <FilePenLine className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onCopy} aria-label="Copy note content">
-              <Copy className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={(e) => { onCopy(); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }} aria-label="Copy note content" title="Copy note content">
+              {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
             <Button
               variant="ghost"
@@ -128,6 +135,7 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
               className="h-8 w-8 text-destructive/80 hover:text-destructive"
               onClick={onDelete}
               aria-label="Delete note"
+              title="Delete note"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

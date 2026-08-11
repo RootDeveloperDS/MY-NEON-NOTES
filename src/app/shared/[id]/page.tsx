@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
-import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
+import dynamic from 'next/dynamic';
+const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
 import { detectCodeBlock } from '@/lib/code-detect';
 import { Loader } from 'lucide-react';
 import { format } from 'date-fns';
@@ -93,7 +94,8 @@ export default function SharedNotePage() {
     );
   }
 
-  const codeDetection = detectCodeBlock(note.content);
+  // Bolt Optimization: Memoize expensive code detection using useMemo to avoid running heavy regex on every render (e.g. when copying link/content).
+  const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
 
   const languageLabels: Record<string, string> = {
     javascript: 'JavaScript',

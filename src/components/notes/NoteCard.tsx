@@ -1,26 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 import type { Note } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { FilePenLine, Trash2, Copy, FileCode2, Globe, Share2 } from 'lucide-react';
+import { FilePenLine, Trash2, Copy, FileCode2, Globe, Share2, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { detectCodeBlock } from '@/lib/code-detect';
-import { NoteCodeBlock } from '@/components/notes/NoteCodeBlock';
+import dynamic from 'next/dynamic';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
+const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
 
 interface NoteCardProps {
   note: Note;
-  onEdit: () => void;
-  onView: () => void;
+  onEdit: (note: Note) => void;
+  onView: (note: Note) => void;
 }
 
-export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
+// Bolt Optimization: Wrap NoteCard with React.memo to prevent unnecessary re-renders when parent state changes.
+export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isShared, setIsShared] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(note.content);
@@ -49,12 +54,18 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
 
   const handleEditClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    onEdit();
+    onEdit(note);
+  };
+
+  const handleView = () => {
+    onView(note);
   };
 
   const handleCopyClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     handleCopy();
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   const handleDeleteClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -80,6 +91,8 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
       }
       const shareUrl = `${window.location.origin}/shared/${note.id}`;
       await navigator.clipboard.writeText(shareUrl);
+      setIsShared(true);
+      setTimeout(() => setIsShared(false), 2000);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -89,7 +102,8 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
     }
   };
   
-  const codeDetection = detectCodeBlock(note.content);
+  // Bolt Optimization: Memoize expensive code detection using useMemo to avoid running heavy regex on every render.
+  const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
   
   const languageLabels: Record<string, string> = {
     javascript: 'JavaScript',
@@ -107,11 +121,21 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
 
   const relativeTime = note.updatedAt ? formatDistanceToNow(note.updatedAt.toDate()).replace('about ', '').trim() : 'just now';
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleView();
+    }
+  };
+
   return (
     <>
       <div
-        onClick={onView}
-        className="group relative flex flex-col w-full border border-primary/20 bg-card/60 hover:bg-card/90 transition-all duration-300 rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)] hover:-translate-y-1"
+        onClick={handleView}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="button"
+        className="group relative flex flex-col w-full border border-primary/20 bg-card/60 hover:bg-card/90 transition-all duration-300 rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)] hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         {/* Top Accent line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary/30 group-hover:bg-primary transition-colors duration-500 shadow-[0_0_10px_hsl(var(--primary)/0.5)]" />
@@ -156,17 +180,17 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
         </div>
 
         {/* Footer actions panel (fades in on hover) */}
-        <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-primary/10 bg-primary/5 opacity-80 md:opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleShareClick} aria-label="Share note">
-            <Share2 className="h-4 w-4" />
+        <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-primary/10 bg-primary/5 opacity-80 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleShareClick} aria-label="Share note" title="Share note">
+            {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleEditClick} aria-label="Edit note">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleEditClick} aria-label="Edit note" title="Edit note">
             <FilePenLine className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleCopyClick} aria-label="Copy note content">
-            <Copy className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleCopyClick} aria-label="Copy note content" title="Copy note content">
+            {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={handleDeleteClick} aria-label="Delete note">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={handleDeleteClick} aria-label="Delete note" title="Delete note">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -190,4 +214,4 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
       </AlertDialog>
     </>
   );
-}
+});

@@ -5,6 +5,7 @@ import { SettingsDialog } from '@/components/settings-dialog';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { trackEvent } from '@/lib/analytics';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ export function UserProfile() {
   const handleSignOut = async () => {
     setIsLoading(true);
     try {
+      trackEvent('User Sign-Out', 'User logged out', user?.displayName, user?.email);
       await logout();
       toast({
         title: 'Signed out',
@@ -79,7 +81,7 @@ export function UserProfile() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+          <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" aria-label="Open user profile menu" title="Open user profile menu">
             <Avatar className="h-9 w-9 border border-primary/20 hover:border-primary/50 transition-colors">
               <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || ''} referrerPolicy="no-referrer" />
               <AvatarFallback className="bg-primary/10 text-primary">{getInitials(user?.displayName)}</AvatarFallback>

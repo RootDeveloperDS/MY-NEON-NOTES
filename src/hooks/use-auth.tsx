@@ -78,20 +78,13 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
           return res.json();
         })
         .then(async data => {
-          if (data.valid) {
-            if (data.customToken) {
-              await signInWithCustomToken(auth, data.customToken);
-              setActiveUid(urlUid);
-              setIsUrlAuth(true);
-              toast({ title: 'Login Successful', description: 'Logged in securely via URL.' });
-            } else {
-              // Fallback for backwards compatibility if backend is not updated yet
-              setActiveUid(urlUid);
-              setIsUrlAuth(true);
-              toast({ title: 'Login Successful', description: 'Logged in using URL UID (Unsecured Mode).' });
-            }
+          if (data.valid && data.customToken) {
+            await signInWithCustomToken(auth, data.customToken);
+            setActiveUid(urlUid);
+            setIsUrlAuth(true);
+            toast({ title: 'Login Successful', description: 'Logged in securely via URL.' });
           } else {
-            toast({ variant: 'destructive', title: 'Invalid UID', description: 'The UID in the URL is not valid. Please log in normally.' });
+            toast({ variant: 'destructive', title: 'Authentication Failed', description: 'Missing secure token or invalid UID. Please log in normally.' });
             setIsUrlAuth(false);
             // Fallback to normal auth
             const unsub = onAuthStateChanged(auth, (user) => {
