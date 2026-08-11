@@ -5,6 +5,7 @@ import { SettingsDialog } from '@/components/settings-dialog';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { trackEvent } from '@/lib/analytics';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ export function UserProfile() {
   const handleSignOut = async () => {
     setIsLoading(true);
     try {
+      trackEvent('User Sign-Out', 'User logged out', user?.displayName, user?.email);
       await logout();
       toast({
         title: 'Signed out',

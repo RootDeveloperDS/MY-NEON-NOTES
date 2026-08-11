@@ -86,6 +86,7 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           updatedAt: serverTimestamp() 
         }, { merge: true });
         toast({ title: 'Note Updated', description: 'Your note has been successfully updated.' });
+        trackEvent('Update Note', `Updated note titled: "${data.title}"`, user?.displayName || 'Anonymous', user?.email || null);
       } else {
         // Create new note with the current user's ID
         await addDoc(collection(db, 'notes'), { 
@@ -95,10 +96,12 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           updatedAt: serverTimestamp() 
         });
         toast({ title: 'Note Created', description: 'Your new note has been saved.' });
+        const userDisplay = user?.displayName || 'Anonymous';
+        const userEmail = user?.email || null;
         if (isFirstNote) {
-          const userDisplay = user?.displayName || 'Anonymous';
-          const userEmail = user?.email || null;
           trackEvent('First Note Created', 'User created their very first note', userDisplay, userEmail);
+        } else {
+          trackEvent('Create Note', `Created note titled: "${data.title}"`, userDisplay, userEmail);
         }
       }
       onClose();

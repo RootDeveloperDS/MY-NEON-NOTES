@@ -192,6 +192,7 @@ export function NotesDashboard() {
       title: 'Note Copied',
       description: 'The note content has been copied to your clipboard.',
     });
+    trackEvent('Copy Note', `Copied content of note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
   };
 
   const handleDeleteViewerNote = async () => {
@@ -203,6 +204,7 @@ export function NotesDashboard() {
         title: 'Note Deleted',
         description: 'The note has been successfully deleted.',
       });
+      trackEvent('Delete Note', `Deleted note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
       setViewingNote(null);
     } catch (error) {
       toast({

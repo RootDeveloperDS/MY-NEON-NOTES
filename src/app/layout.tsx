@@ -1,9 +1,10 @@
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/hooks/use-auth';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '@/components/theme-provider';
-import { jsonLd, softwareApplicationJsonLd, websiteJsonLd } from './metadata';
+import { jsonLd, softwareApplicationJsonLd, websiteJsonLd, faqJsonLd, breadcrumbJsonLd } from './metadata';
 import { Orbitron, Source_Code_Pro, Roboto } from 'next/font/google';
 
 export { metadata } from './metadata';
@@ -38,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {[jsonLd, websiteJsonLd, softwareApplicationJsonLd].map((schema, index) => (
+        {[jsonLd, websiteJsonLd, softwareApplicationJsonLd, faqJsonLd, breadcrumbJsonLd].map((schema, index) => (
           <script
             key={`structured-data-${index}`}
             type="application/ld+json"
@@ -59,6 +60,7 @@ export default function RootLayout({
           <Toaster />
         </ThemeProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

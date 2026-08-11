@@ -196,7 +196,11 @@ export const metadata: Metadata = {
   verification: {
     google: 'google902e925a0f1e29e0',
   },
-  themeColor: '#050816',
+  appleWebApp: {
+    title: PRODUCT_DATA.name,
+    capable: true,
+    statusBarStyle: 'black-translucent',
+  },
   other: {
     'owner': PRODUCT_DATA.publisher,
     'designer': SITE_DATA.author,
@@ -248,6 +252,7 @@ export const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: PRODUCT_DATA.name,
+  alternateName: ['Neon Notes', 'NeonNotes', 'VisarNotes', 'Neon-Notes-App'],
   url: SITE_DATA.url,
   description: PRODUCT_DATA.description,
   author: {
@@ -261,6 +266,61 @@ export const websiteJsonLd = {
     url: SITE_DATA.social.website,
   },
   sameAs: SITE_DATA.aliases,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${SITE_DATA.url}/?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+export const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is Neon Notes?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Neon Notes is a futuristic, neon-themed notes application built for capturing ideas, drafts, code snippets, and structured writing in a private, encrypted digital notebook.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is Neon Notes free to use?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, Neon Notes is 100% free with secure cloud synchronization and privacy-first note storage.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does Neon Notes support code snippets?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, Neon Notes features syntax-highlighted code block rendering for programming languages like JavaScript, TypeScript, Python, C++, Java, Rust, Go, and more.',
+      },
+    },
+  ],
+};
+
+export const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Home',
+      item: SITE_DATA.url,
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Login',
+      item: `${SITE_DATA.url}/login`,
+    },
+  ],
 };
 
 export const softwareApplicationJsonLd = {
