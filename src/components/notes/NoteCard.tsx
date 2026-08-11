@@ -4,7 +4,7 @@ import { useState, useMemo, memo } from 'react';
 import type { Note } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { FilePenLine, Trash2, Copy, FileCode2, Globe, Share2 } from 'lucide-react';
+import { FilePenLine, Trash2, Copy, FileCode2, Globe, Share2, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -24,6 +24,8 @@ interface NoteCardProps {
 export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isShared, setIsShared] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(note.content);
@@ -62,6 +64,8 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
   const handleCopyClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     handleCopy();
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   const handleDeleteClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -87,6 +91,8 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
       }
       const shareUrl = `${window.location.origin}/shared/${note.id}`;
       await navigator.clipboard.writeText(shareUrl);
+      setIsShared(true);
+      setTimeout(() => setIsShared(false), 2000);
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -174,15 +180,15 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
         </div>
 
         {/* Footer actions panel (fades in on hover) */}
-        <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-primary/10 bg-primary/5 opacity-80 md:opacity-0 group-hover:opacity-100 transition-all duration-300">
+        <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-primary/10 bg-primary/5 opacity-80 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300">
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleShareClick} aria-label="Share note" title="Share note">
-            <Share2 className="h-4 w-4" />
+            {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleEditClick} aria-label="Edit note" title="Edit note">
             <FilePenLine className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleCopyClick} aria-label="Copy note content" title="Copy note content">
-            <Copy className="h-4 w-4" />
+            {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={handleDeleteClick} aria-label="Delete note" title="Delete note">
             <Trash2 className="h-4 w-4" />
