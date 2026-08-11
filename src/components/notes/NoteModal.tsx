@@ -78,6 +78,15 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
 
     try {
       if (note) {
+        if (note.userId !== activeUid) {
+          toast({
+            variant: 'destructive',
+            title: 'Authorization Error',
+            description: 'You are not authorized to edit this note.',
+          });
+          return;
+        }
+
         // Update existing note, ensuring userId is preserved
         const noteRef = doc(db, 'notes', note.id);
         await setDoc(noteRef, { 
