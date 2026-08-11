@@ -21,7 +21,6 @@ export const apiFetch = async (input: RequestInfo | URL, init: RequestInit = {})
   const isFirstParty = () => {
     if (typeof window === 'undefined') return true;
     let urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    if (urlString.startsWith('/') && !urlString.startsWith('//')) return true;
     try {
       const parsed = new URL(urlString, window.location.origin);
       return parsed.origin === window.location.origin;
