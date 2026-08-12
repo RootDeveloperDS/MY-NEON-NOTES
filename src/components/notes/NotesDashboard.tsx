@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, useDeferredValue } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
@@ -132,16 +132,19 @@ export function NotesDashboard() {
     setSelectedNote(null);
   };
 
+  // Bolt Optimization: Use useDeferredValue for searchTerm to avoid blocking main thread on render-heavy filter operations
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+
   const filteredNotes = useMemo(() => {
-    if (!searchTerm) return notes;
+    if (!deferredSearchTerm) return notes;
     // Bolt Optimization: Extract invariant (lowercased term) out of filter loop to prevent O(n) redundant string operations
-    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
     return notes.filter(
       (note) =>
         note.title.toLowerCase().includes(lowercasedSearchTerm) ||
         note.content.toLowerCase().includes(lowercasedSearchTerm)
     );
-  }, [notes, searchTerm]);
+  }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
     const result: Note[][] = Array.from({ length: cols }, () => []);
