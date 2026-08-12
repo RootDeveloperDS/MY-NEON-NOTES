@@ -198,6 +198,11 @@ export function NotesDashboard() {
   const handleDeleteViewerNote = async () => {
     if (!viewingNote) return;
 
+    if (viewingNote.userId !== activeUid) {
+      toast({ variant: 'destructive', title: 'Unauthorized', description: 'You can only delete your own notes.' });
+      return;
+    }
+
     try {
       await deleteDoc(doc(db, 'notes', viewingNote.id));
       toast({
