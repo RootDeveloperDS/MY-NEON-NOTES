@@ -133,7 +133,7 @@ export function LoginPage() {
               <>
                 <TabsContent value="signin" className="space-y-3 pt-3">
                   <form onSubmit={form.handleSubmit(v => handleEmailSubmit(v, 'signIn'))}>
-                    <AuthFormFields form={form} />
+                    <AuthFormFields form={form} formType="signIn" />
                   
                   <div className="flex items-center justify-between px-1 py-1">
                     <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ export function LoginPage() {
 
                 <TabsContent value="signup" className="space-y-3 pt-3">
                   <form onSubmit={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))}>
-                    <AuthFormFields form={form} />
+                    <AuthFormFields form={form} formType="signUp" />
                   
                   <div className="flex items-center gap-2 px-1 py-1">
                     <Switch
@@ -206,7 +206,7 @@ export function LoginPage() {
             </div>
           </div>
 
-          <Button variant="outline" className="font-note w-full" onClick={handleGoogleSignIn} disabled={!!loading}>
+          <Button variant="outline" className="font-note w-full" onClick={handleGoogleSignIn} disabled={!!loading} aria-label="Sign in with Google" title="Sign in with Google">
             {loading === 'google' ? <Loader className="animate-spin" /> : <><GoogleIcon className="mr-2" /> Google</>}
           </Button>
         </CardContent>
@@ -216,7 +216,7 @@ export function LoginPage() {
 }
 
 
-function AuthFormFields({ form }: { form: any }) {
+function AuthFormFields({ form, formType }: { form: any; formType: 'signIn' | 'signUp' }) {
     return (
         <div className="space-y-2">
             <FormField
@@ -226,7 +226,7 @@ function AuthFormFields({ form }: { form: any }) {
                     <FormItem className="space-y-1">
                         <FormLabel className="text-xs">Email</FormLabel>
                         <FormControl>
-                            <Input placeholder="user@gmail.com" className="font-auth-input h-9 text-sm" {...field} />
+                            <Input autoComplete="email" placeholder="user@gmail.com" className="font-auth-input h-9 text-sm" {...field} />
                         </FormControl>
                         <FormMessage className="text-[11px]" />
                     </FormItem>
@@ -239,7 +239,7 @@ function AuthFormFields({ form }: { form: any }) {
                     <FormItem className="space-y-1">
                         <FormLabel className="text-xs">Password</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="P4$sW9rd" className="font-auth-input h-9 text-sm" {...field} />
+                            <Input autoComplete={formType === 'signIn' ? 'current-password' : 'new-password'} type="password" placeholder="P4$sW9rd" className="font-auth-input h-9 text-sm" {...field} />
                         </FormControl>
                         <FormMessage className="text-[11px]" />
                     </FormItem>
