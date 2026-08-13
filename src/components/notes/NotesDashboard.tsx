@@ -198,6 +198,16 @@ export function NotesDashboard() {
   const handleDeleteViewerNote = async () => {
     if (!viewingNote) return;
 
+    if (viewingNote.userId !== activeUid) {
+      toast({
+        variant: 'destructive',
+        title: 'Authorization Error',
+        description: 'You are not authorized to delete this note.',
+      });
+      setIsViewerDeleteDialogOpen(false);
+      return;
+    }
+
     try {
       await deleteDoc(doc(db, 'notes', viewingNote.id));
       toast({

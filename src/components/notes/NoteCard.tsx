@@ -11,6 +11,7 @@ import { db } from '@/lib/firebase';
 import { detectCodeBlock } from '@/lib/code-detect';
 import dynamic from 'next/dynamic';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useAuth } from '@/hooks/use-auth';
 
 const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
 
@@ -23,6 +24,7 @@ interface NoteCardProps {
 // Bolt Optimization: Wrap NoteCard with React.memo to prevent unnecessary re-renders when parent state changes.
 export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   const { toast } = useToast();
+  const { activeUid } = useAuth();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isShared, setIsShared] = useState(false);
@@ -36,6 +38,16 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
   };
 
   const handleDelete = async () => {
+    if (note.userId !== activeUid) {
+      toast({
+        variant: 'destructive',
+        title: 'Authorization Error',
+        description: 'You are not authorized to delete this note.',
+      });
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+
     try {
       await deleteDoc(doc(db, 'notes', note.id));
       toast({
@@ -75,6 +87,16 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
 
   const handleShareClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
+
+    if (note.userId !== activeUid && !note.isPublic) {
+      toast({
+        variant: 'destructive',
+        title: 'Authorization Error',
+        description: 'You are not authorized to share this note.',
+      });
+      return;
+    }
+
     try {
       if (!note.isPublic) {
         const { updateDoc, serverTimestamp } = await import('firebase/firestore');
