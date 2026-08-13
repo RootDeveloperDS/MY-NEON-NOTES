@@ -154,7 +154,8 @@ export function LoginPage() {
                       onClick={handlePasswordReset}
                       disabled={!!loading}
                     >
-                      Forgot password?
+                      {loading === 'reset' ? <Loader className="h-3 w-3 animate-spin mr-1 inline" /> : null}
+                      {loading === 'reset' ? 'Sending...' : 'Forgot password?'}
                     </Button>
                   </div>
 
@@ -170,7 +171,7 @@ export function LoginPage() {
 
                 <TabsContent value="signup" className="space-y-3 pt-3">
                   <form onSubmit={form.handleSubmit(v => handleEmailSubmit(v, 'signUp'))}>
-                    <AuthFormFields form={form} />
+                    <AuthFormFields form={form} isSignUp />
                   
                   <div className="flex items-center gap-2 px-1 py-1">
                     <Switch
@@ -216,7 +217,7 @@ export function LoginPage() {
 }
 
 
-function AuthFormFields({ form }: { form: any }) {
+function AuthFormFields({ form, isSignUp }: { form: any, isSignUp?: boolean }) {
     return (
         <div className="space-y-2">
             <FormField
@@ -226,7 +227,7 @@ function AuthFormFields({ form }: { form: any }) {
                     <FormItem className="space-y-1">
                         <FormLabel className="text-xs">Email</FormLabel>
                         <FormControl>
-                            <Input placeholder="user@gmail.com" className="font-auth-input h-9 text-sm" {...field} />
+                            <Input placeholder="user@gmail.com" className="font-auth-input h-9 text-sm" autoComplete="email" autoFocus={!isSignUp} {...field} />
                         </FormControl>
                         <FormMessage className="text-[11px]" />
                     </FormItem>
@@ -239,7 +240,7 @@ function AuthFormFields({ form }: { form: any }) {
                     <FormItem className="space-y-1">
                         <FormLabel className="text-xs">Password</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="P4$sW9rd" className="font-auth-input h-9 text-sm" {...field} />
+                            <Input type="password" placeholder="P4$sW9rd" className="font-auth-input h-9 text-sm" autoComplete={isSignUp ? "new-password" : "current-password"} {...field} />
                         </FormControl>
                         <FormMessage className="text-[11px]" />
                     </FormItem>
