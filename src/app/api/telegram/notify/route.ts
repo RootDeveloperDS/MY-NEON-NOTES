@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     }
 
     const headerIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip');
-    const finalIp = ip && ip !== 'Unknown' ? ip : headerIp || 'Unknown';
+    const finalIp = headerIp || (ip && ip !== 'Unknown' ? ip : 'Unknown');
 
     const timestamp = time || format(new Date(), "M/d/yyyy, h:mm:ss a 'UTC'");
     const userDisplay = escapeHtml(userDisplayName) || 'Anonymous';
