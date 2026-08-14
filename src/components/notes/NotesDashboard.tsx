@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
@@ -24,6 +24,34 @@ import { useRouter } from 'next/navigation';
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
+
+// Bolt Optimization: Extract sidebar item to React.memo to prevent O(n) re-calculations of formatDistanceToNow
+// when unrelated parent state changes in NotesDashboard.
+interface SidebarNoteItemProps {
+  note: Note;
+  isActive: boolean;
+  onView: (note: Note) => void;
+}
+const SidebarNoteItem = React.memo(({ note, isActive, onView }: SidebarNoteItemProps) => {
+  const relativeTime = note.updatedAt
+    ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })
+    : 'just now';
+
+  return (
+    <button
+      type="button"
+      onClick={() => onView(note)}
+      className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+        isActive
+          ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
+          : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
+      }`}
+    >
+      <p className="truncate font-note text-sm text-primary">{note.title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{relativeTime}</p>
+    </button>
+  );
+});
 
 export function NotesDashboard() {
   const { activeUid, user, loading: authLoading, logout, isUrlAuth } = useAuth();
@@ -185,7 +213,7 @@ export function NotesDashboard() {
     setViewingNote(note);
   }, []);
 
-  const handleCopyViewerNote = () => {
+  const handleCopyViewerNote = useCallback(() => {
     if (!viewingNote) return;
     navigator.clipboard.writeText(viewingNote.content);
     toast({
@@ -193,9 +221,9 @@ export function NotesDashboard() {
       description: 'The note content has been copied to your clipboard.',
     });
     trackEvent('Copy Note', `Copied content of note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
-  };
+  }, [viewingNote, toast, user]);
 
-  const handleDeleteViewerNote = async () => {
+  const handleDeleteViewerNote = useCallback(async () => {
     if (!viewingNote) return;
 
     try {
@@ -215,7 +243,11 @@ export function NotesDashboard() {
     }
 
     setIsViewerDeleteDialogOpen(false);
-  };
+  }, [viewingNote, toast, user]);
+
+  const handleViewerBack = useCallback(() => setViewingNote(null), []);
+  const handleViewerEdit = useCallback(() => handleOpenModal(viewingNote), [handleOpenModal, viewingNote]);
+  const handleViewerDelete = useCallback(() => setIsViewerDeleteDialogOpen(true), []);
 
   return (
     <div className="relative flex min-h-screen flex-col p-4 md:p-8 pb-4 md:pb-8">
@@ -275,37 +307,23 @@ export function NotesDashboard() {
               <div className={`mt-8 transition-all duration-300 lg:grid ${splitViewMinHeightClass} ${splitViewGridClass} lg:gap-5`}>
               <aside className="hidden lg:block overflow-y-auto pr-1">
                 <div className="space-y-2">
-                  {filteredNotes.map((note) => {
-                    const isActive = note.id === viewingNote.id;
-                    const relativeTime = note.updatedAt
-                      ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })
-                      : 'just now';
-
-                    return (
-                      <button
-                        key={note.id}
-                        type="button"
-                        onClick={() => handleViewNote(note)}
-                        className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                          isActive
-                            ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
-                            : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
-                        }`}
-                      >
-                        <p className="truncate font-note text-sm text-primary">{note.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{relativeTime}</p>
-                      </button>
-                    );
-                  })}
+                  {filteredNotes.map((note) => (
+                    <SidebarNoteItem
+                      key={note.id}
+                      note={note}
+                      isActive={note.id === viewingNote.id}
+                      onView={handleViewNote}
+                    />
+                  ))}
                 </div>
               </aside>
               <div className="hidden min-w-0 lg:block">
                 <NoteViewer
                   note={viewingNote}
-                  onBack={() => setViewingNote(null)}
-                  onEdit={() => handleOpenModal(viewingNote)}
+                  onBack={handleViewerBack}
+                  onEdit={handleViewerEdit}
                   onCopy={handleCopyViewerNote}
-                  onDelete={() => setIsViewerDeleteDialogOpen(true)}
+                  onDelete={handleViewerDelete}
                 />
               </div>
             </div>
@@ -361,10 +379,10 @@ export function NotesDashboard() {
           <div className="h-full">
             <NoteViewer
               note={viewingNote}
-              onBack={() => setViewingNote(null)}
-              onEdit={() => handleOpenModal(viewingNote)}
+              onBack={handleViewerBack}
+              onEdit={handleViewerEdit}
               onCopy={handleCopyViewerNote}
-              onDelete={() => setIsViewerDeleteDialogOpen(true)}
+              onDelete={handleViewerDelete}
             />
           </div>
         </div>
