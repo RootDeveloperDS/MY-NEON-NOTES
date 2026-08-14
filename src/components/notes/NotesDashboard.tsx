@@ -324,16 +324,20 @@ export function NotesDashboard() {
               NO NOTES FOUND
             </h2>
             <p className="mb-8 max-w-[280px] text-sm leading-relaxed text-muted-foreground">
-              Looks empty here. Create your first note and start building your knowledge.
+              {notes.length > 0
+                ? "No notes match your current search."
+                : "Looks empty here. Create your first note and start building your knowledge."}
             </p>
-            <Button
-              onClick={() => handleOpenModal()}
-              variant="outline"
-              className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create First Note
-            </Button>
+            {notes.length === 0 && (
+              <Button
+                onClick={() => handleOpenModal()}
+                variant="outline"
+                className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create First Note
+              </Button>
+            )}
           </div>
         </div>
       )}
