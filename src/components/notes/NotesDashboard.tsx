@@ -320,20 +320,33 @@ export function NotesDashboard() {
             <div className="mb-6 rounded-full bg-primary/10 p-4 shadow-[0_0_20px_hsl(var(--primary)/0.2)] transition-transform duration-500 group-hover:scale-110">
                <FileText className="h-10 w-10 text-primary" />
             </div>
-            <h2 className="mb-2 font-headline text-2xl text-primary tracking-wide drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)]">
-              NO NOTES FOUND
-            </h2>
-            <p className="mb-8 max-w-[280px] text-sm leading-relaxed text-muted-foreground">
-              Looks empty here. Create your first note and start building your knowledge.
-            </p>
-            <Button
-              onClick={() => handleOpenModal()}
-              variant="outline"
-              className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create First Note
-            </Button>
+            {notes.length > 0 ? (
+              <>
+                <h2 className="mb-2 font-headline text-2xl text-primary tracking-wide drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)]">
+                  NO RESULTS FOUND
+                </h2>
+                <p className="mb-8 max-w-[280px] text-sm leading-relaxed text-muted-foreground">
+                  We couldn't find any notes matching your search query.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="mb-2 font-headline text-2xl text-primary tracking-wide drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)]">
+                  NO NOTES FOUND
+                </h2>
+                <p className="mb-8 max-w-[280px] text-sm leading-relaxed text-muted-foreground">
+                  Looks empty here. Create your first note and start building your knowledge.
+                </p>
+                <Button
+                  onClick={() => handleOpenModal()}
+                  variant="outline"
+                  className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create First Note
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}
