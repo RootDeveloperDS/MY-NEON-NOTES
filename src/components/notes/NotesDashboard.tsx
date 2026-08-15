@@ -13,6 +13,7 @@ const NoteModal = dynamic(() => import('@/components/notes/NoteModal').then(mod 
 const NoteViewer = dynamic(() => import('@/components/notes/NoteViewer').then(mod => mod.NoteViewer), { ssr: false });
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
+import React from 'react';
 import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,36 @@ import { useRouter } from 'next/navigation';
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
+
+// Bolt Optimization: Extract sidebar list item to prevent expensive date formatting re-renders
+const SidebarNoteItem = React.memo(function SidebarNoteItem({
+  note,
+  isActive,
+  onView,
+}: {
+  note: Note;
+  isActive: boolean;
+  onView: (note: Note) => void;
+}) {
+  const relativeTime = note.updatedAt
+    ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })
+    : 'just now';
+
+  return (
+    <button
+      type="button"
+      onClick={() => onView(note)}
+      className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+        isActive
+          ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
+          : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
+      }`}
+    >
+      <p className="truncate font-note text-sm text-primary">{note.title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{relativeTime}</p>
+    </button>
+  );
+});
 
 export function NotesDashboard() {
   const { activeUid, user, loading: authLoading, logout, isUrlAuth } = useAuth();
@@ -275,28 +306,14 @@ export function NotesDashboard() {
               <div className={`mt-8 transition-all duration-300 lg:grid ${splitViewMinHeightClass} ${splitViewGridClass} lg:gap-5`}>
               <aside className="hidden lg:block overflow-y-auto pr-1">
                 <div className="space-y-2">
-                  {filteredNotes.map((note) => {
-                    const isActive = note.id === viewingNote.id;
-                    const relativeTime = note.updatedAt
-                      ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })
-                      : 'just now';
-
-                    return (
-                      <button
-                        key={note.id}
-                        type="button"
-                        onClick={() => handleViewNote(note)}
-                        className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                          isActive
-                            ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
-                            : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
-                        }`}
-                      >
-                        <p className="truncate font-note text-sm text-primary">{note.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{relativeTime}</p>
-                      </button>
-                    );
-                  })}
+                  {filteredNotes.map((note) => (
+                    <SidebarNoteItem
+                      key={note.id}
+                      note={note}
+                      isActive={note.id === viewingNote.id}
+                      onView={handleViewNote}
+                    />
+                  ))}
                 </div>
               </aside>
               <div className="hidden min-w-0 lg:block">
