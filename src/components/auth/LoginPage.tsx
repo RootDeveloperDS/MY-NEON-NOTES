@@ -154,7 +154,8 @@ export function LoginPage() {
                       onClick={handlePasswordReset}
                       disabled={!!loading}
                     >
-                      Forgot password?
+                      {loading === 'reset' ? <Loader className="h-3 w-3 animate-spin mr-1 inline" /> : null}
+                      {loading === 'reset' ? 'Sending...' : 'Forgot password?'}
                     </Button>
                   </div>
 
