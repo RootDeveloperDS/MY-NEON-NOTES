@@ -185,7 +185,18 @@ export function NotesDashboard() {
     setViewingNote(note);
   }, []);
 
-  const handleCopyViewerNote = () => {
+  // Bolt Optimization: Stabilized callback props to prevent NoteViewer re-renders
+  const handleBackViewerNote = useCallback(() => {
+    setViewingNote(null);
+  }, []);
+
+  const handleEditViewerNote = useCallback(() => {
+    if (viewingNote) {
+      handleOpenModal(viewingNote);
+    }
+  }, [viewingNote, handleOpenModal]);
+
+  const handleCopyViewerNote = useCallback(() => {
     if (!viewingNote) return;
     navigator.clipboard.writeText(viewingNote.content);
     toast({
@@ -193,7 +204,11 @@ export function NotesDashboard() {
       description: 'The note content has been copied to your clipboard.',
     });
     trackEvent('Copy Note', `Copied content of note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
-  };
+  }, [viewingNote, toast, user]);
+
+  const handleOpenViewerDelete = useCallback(() => {
+    setIsViewerDeleteDialogOpen(true);
+  }, []);
 
   const handleDeleteViewerNote = async () => {
     if (!viewingNote) return;
@@ -302,10 +317,10 @@ export function NotesDashboard() {
               <div className="hidden min-w-0 lg:block">
                 <NoteViewer
                   note={viewingNote}
-                  onBack={() => setViewingNote(null)}
-                  onEdit={() => handleOpenModal(viewingNote)}
+                  onBack={handleBackViewerNote}
+                  onEdit={handleEditViewerNote}
                   onCopy={handleCopyViewerNote}
-                  onDelete={() => setIsViewerDeleteDialogOpen(true)}
+                  onDelete={handleOpenViewerDelete}
                 />
               </div>
             </div>
@@ -361,10 +376,10 @@ export function NotesDashboard() {
           <div className="h-full">
             <NoteViewer
               note={viewingNote}
-              onBack={() => setViewingNote(null)}
-              onEdit={() => handleOpenModal(viewingNote)}
+              onBack={handleBackViewerNote}
+              onEdit={handleEditViewerNote}
               onCopy={handleCopyViewerNote}
-              onDelete={() => setIsViewerDeleteDialogOpen(true)}
+              onDelete={handleOpenViewerDelete}
             />
           </div>
         </div>

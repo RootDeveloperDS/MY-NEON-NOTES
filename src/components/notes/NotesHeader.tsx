@@ -57,6 +57,7 @@ export const NotesHeader = memo(function NotesHeader({ onSearchChange }: NotesHe
             alt="Neon Notes Logo"
             width={60}
             height={60}
+            priority
             className="drop-shadow-[0_0_5px_hsl(var(--primary))]"
           />
           <h1 className="font-headline text-4xl text-primary drop-shadow-[0_0_5px_hsl(var(--primary))]">
