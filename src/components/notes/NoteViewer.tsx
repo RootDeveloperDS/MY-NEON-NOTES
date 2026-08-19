@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, memo } from 'react';
 import type { Note } from '@/lib/types';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ interface NoteViewerProps {
   onDelete: () => void;
 }
 
-export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewerProps) {
+export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewerProps) {
   const createdAt = note.createdAt ? format(note.createdAt.toDate(), 'PPp') : 'Unknown';
   const updatedAt = note.updatedAt ? format(note.updatedAt.toDate(), 'PPp') : 'Unknown';
   const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
@@ -154,4 +154,4 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
       </CardContent>
     </Card>
   );
-}
+});
