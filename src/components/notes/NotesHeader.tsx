@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, memo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Github, ExternalLink } from 'lucide-react';
+import { Search, Github, ExternalLink, X } from 'lucide-react';
 import Link from 'next/link';
 import { UserProfile } from '@/components/auth/UserProfile';
 import Image from 'next/image';
@@ -11,16 +11,18 @@ import { trackEvent } from '@/lib/analytics';
 import { useAuth } from '@/hooks/use-auth';
 
 interface NotesHeaderProps {
+  searchTerm?: string;
   onSearchChange: (term: string) => void;
 }
 
 // Bolt Optimization: Wrap NotesHeader with React.memo to prevent unnecessary re-renders when dashboard state (like viewingNote) updates.
-export const NotesHeader = memo(function NotesHeader({ onSearchChange }: NotesHeaderProps) {
+export const NotesHeader = memo(function NotesHeader({ searchTerm = '', onSearchChange }: NotesHeaderProps) {
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   // Bolt Optimization: Added debounce timer ref to prevent state updates on every keystroke
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [kbdShortcut, setKbdShortcut] = useState('Ctrl');
+  const [localSearch, setLocalSearch] = useState(searchTerm);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -46,6 +48,19 @@ export const NotesHeader = memo(function NotesHeader({ onSearchChange }: NotesHe
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    setLocalSearch(searchTerm);
+  }, [searchTerm]);
+
+  const handleClear = () => {
+    setLocalSearch('');
+    onSearchChange('');
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    inputRef.current?.focus();
+  };
 
   return (
     <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -75,24 +90,36 @@ export const NotesHeader = memo(function NotesHeader({ onSearchChange }: NotesHe
           <Input
             ref={inputRef}
             type="search"
+            value={localSearch}
             placeholder="Search notes..."
-            className="pl-10 pr-16 h-11 focus-visible:ring-primary/50 focus-visible:shadow-[0_0_15px_hsl(var(--primary)/0.3)] transition-all duration-300"
+            className="pl-10 pr-10 md:pr-24 h-11 focus-visible:ring-primary/50 focus-visible:shadow-[0_0_15px_hsl(var(--primary)/0.3)] transition-all duration-300 [&::-webkit-search-cancel-button]:hidden"
             onChange={(e) => {
+              const value = e.target.value;
+              setLocalSearch(value);
               // Bolt Optimization: Debounce search input to prevent main thread blocking during typing
               if (debounceTimerRef.current) {
                 clearTimeout(debounceTimerRef.current);
               }
-              const value = e.target.value;
               debounceTimerRef.current = setTimeout(() => {
                 onSearchChange(value);
               }, 300);
             }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
-                inputRef.current?.blur();
+                handleClear();
               }
             }}
           />
+          {localSearch && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute right-3 md:right-20 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground hover:text-primary transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden h-6 select-none items-center gap-1 rounded border border-primary/20 bg-muted/30 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 md:flex group-focus-within:border-primary/50 group-focus-within:text-primary/70">
             <span className="text-[10px]">{kbdShortcut}</span>K
           </kbd>
