@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, useDeferredValue } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
@@ -40,6 +40,9 @@ export function NotesDashboard() {
   const [mounted, setMounted] = useState(false);
   const [cols, setCols] = useState(1);
   const hasTrackedVisit = useRef(false);
+
+  // Bolt Optimization: Defer search term to ensure rapid typing prioritizes React rendering over O(n) filter execution.
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
   useEffect(() => {
     if (!authLoading && !hasTrackedVisit.current) {
@@ -133,15 +136,15 @@ export function NotesDashboard() {
   };
 
   const filteredNotes = useMemo(() => {
-    if (!searchTerm) return notes;
+    if (!deferredSearchTerm) return notes;
     // Bolt Optimization: Extract invariant (lowercased term) out of filter loop to prevent O(n) redundant string operations
-    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
     return notes.filter(
       (note) =>
         note.title.toLowerCase().includes(lowercasedSearchTerm) ||
         note.content.toLowerCase().includes(lowercasedSearchTerm)
     );
-  }, [notes, searchTerm]);
+  }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
     const result: Note[][] = Array.from({ length: cols }, () => []);
@@ -185,7 +188,7 @@ export function NotesDashboard() {
     setViewingNote(note);
   }, []);
 
-  const handleCopyViewerNote = () => {
+  const handleCopyViewerNote = useCallback(() => {
     if (!viewingNote) return;
     navigator.clipboard.writeText(viewingNote.content);
     toast({
@@ -193,9 +196,9 @@ export function NotesDashboard() {
       description: 'The note content has been copied to your clipboard.',
     });
     trackEvent('Copy Note', `Copied content of note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
-  };
+  }, [viewingNote, toast, user]);
 
-  const handleDeleteViewerNote = async () => {
+  const handleDeleteViewerNote = useCallback(async () => {
     if (!viewingNote) return;
 
     try {
@@ -215,7 +218,13 @@ export function NotesDashboard() {
     }
 
     setIsViewerDeleteDialogOpen(false);
-  };
+  }, [viewingNote, toast, user]);
+
+  const handleBackViewerNote = useCallback(() => setViewingNote(null), []);
+  const handleEditViewerNote = useCallback(() => {
+    if (viewingNote) handleOpenModal(viewingNote);
+  }, [viewingNote, handleOpenModal]);
+  const handleDeleteViewerRequest = useCallback(() => setIsViewerDeleteDialogOpen(true), []);
 
   return (
     <div className="relative flex min-h-screen flex-col p-4 md:p-8 pb-4 md:pb-8">
@@ -302,10 +311,10 @@ export function NotesDashboard() {
               <div className="hidden min-w-0 lg:block">
                 <NoteViewer
                   note={viewingNote}
-                  onBack={() => setViewingNote(null)}
-                  onEdit={() => handleOpenModal(viewingNote)}
+                  onBack={handleBackViewerNote}
+                  onEdit={handleEditViewerNote}
                   onCopy={handleCopyViewerNote}
-                  onDelete={() => setIsViewerDeleteDialogOpen(true)}
+                  onDelete={handleDeleteViewerRequest}
                 />
               </div>
             </div>
@@ -361,10 +370,10 @@ export function NotesDashboard() {
           <div className="h-full">
             <NoteViewer
               note={viewingNote}
-              onBack={() => setViewingNote(null)}
-              onEdit={() => handleOpenModal(viewingNote)}
+              onBack={handleBackViewerNote}
+              onEdit={handleEditViewerNote}
               onCopy={handleCopyViewerNote}
-              onDelete={() => setIsViewerDeleteDialogOpen(true)}
+              onDelete={handleDeleteViewerRequest}
             />
           </div>
         </div>
