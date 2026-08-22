@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, memo } from 'react';
 import type { Note } from '@/lib/types';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth';
 
 const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
 
@@ -24,16 +25,25 @@ interface NoteViewerProps {
   onDelete: () => void;
 }
 
-export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewerProps) {
+export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewerProps) {
   const createdAt = note.createdAt ? format(note.createdAt.toDate(), 'PPp') : 'Unknown';
   const updatedAt = note.updatedAt ? format(note.updatedAt.toDate(), 'PPp') : 'Unknown';
   const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
   const { toast } = useToast();
+  const { activeUid } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isShared, setIsShared] = useState(false);
 
   const handleShareClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
+    if (note.userId !== activeUid && !note.isPublic) {
+      toast({
+        variant: 'destructive',
+        title: 'Authorization Error',
+        description: 'You are not authorized to share this note.',
+      });
+      return;
+    }
     try {
       if (!note.isPublic) {
         const { updateDoc, serverTimestamp } = await import('firebase/firestore');
@@ -62,6 +72,14 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
   };
 
   const togglePublic = async (checked: boolean) => {
+    if (note.userId !== activeUid) {
+      toast({
+        variant: 'destructive',
+        title: 'Authorization Error',
+        description: 'You are not authorized to change the visibility of this note.',
+      });
+      return;
+    }
     try {
       const { updateDoc, serverTimestamp } = await import('firebase/firestore');
       await updateDoc(doc(db, 'notes', note.id), { isPublic: checked, updatedAt: serverTimestamp() });
@@ -154,4 +172,4 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
       </CardContent>
     </Card>
   );
-}
+});

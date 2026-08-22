@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, useDeferredValue } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
@@ -24,6 +24,36 @@ import { useRouter } from 'next/navigation';
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
+
+// Extract sidebar note item to a separate memoized component to avoid O(n) rendering recalculations (e.g., formatDistanceToNow) when unrelated state changes.
+const SidebarNoteItem = React.memo(({
+  note,
+  isActive,
+  onClick,
+}: {
+  note: Note;
+  isActive: boolean;
+  onClick: (note: Note) => void;
+}) => {
+  const relativeTime = note.updatedAt
+    ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })
+    : 'just now';
+
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(note)}
+      className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+        isActive
+          ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
+          : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
+      }`}
+    >
+      <p className="truncate font-note text-sm text-primary">{note.title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{relativeTime}</p>
+    </button>
+  );
+});
 
 export function NotesDashboard() {
   const { activeUid, user, loading: authLoading, logout, isUrlAuth } = useAuth();
@@ -54,7 +84,7 @@ export function NotesDashboard() {
     setMounted(true);
     let resizeTimer: NodeJS.Timeout;
     const handleResize = () => {
-      // Bolt Optimization: Debounce window resize to prevent excessive re-renders of the masonry grid layout during resizing.
+      // Debounce window resize to prevent excessive re-renders of the masonry grid layout during resizing.
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         const width = window.innerWidth;
@@ -105,7 +135,6 @@ export function NotesDashboard() {
       setLoading(false);
     }, (error) => {
       console.error("Error fetching notes: ", error);
-      // This is often a permissions error if Firestore rules are incorrect.
       setLoading(false);
     });
 
@@ -132,16 +161,18 @@ export function NotesDashboard() {
     setSelectedNote(null);
   };
 
+  // Use useDeferredValue for searchTerm to avoid blocking main thread on render-heavy filter operations
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+
   const filteredNotes = useMemo(() => {
-    if (!searchTerm) return notes;
-    // Bolt Optimization: Extract invariant (lowercased term) out of filter loop to prevent O(n) redundant string operations
-    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    if (!deferredSearchTerm) return notes;
+    const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
     return notes.filter(
       (note) =>
         note.title.toLowerCase().includes(lowercasedSearchTerm) ||
         note.content.toLowerCase().includes(lowercasedSearchTerm)
     );
-  }, [notes, searchTerm]);
+  }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
     const result: Note[][] = Array.from({ length: cols }, () => []);
@@ -185,7 +216,18 @@ export function NotesDashboard() {
     setViewingNote(note);
   }, []);
 
-  const handleCopyViewerNote = () => {
+  // Stable callbacks for memoized NoteViewer
+  const handleBackViewerNote = useCallback(() => {
+    setViewingNote(null);
+  }, []);
+
+  const handleEditViewerNote = useCallback(() => {
+    if (viewingNote) {
+      handleOpenModal(viewingNote);
+    }
+  }, [handleOpenModal, viewingNote]);
+
+  const handleCopyViewerNote = useCallback(() => {
     if (!viewingNote) return;
     navigator.clipboard.writeText(viewingNote.content);
     toast({
@@ -193,10 +235,20 @@ export function NotesDashboard() {
       description: 'The note content has been copied to your clipboard.',
     });
     trackEvent('Copy Note', `Copied content of note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
-  };
+  }, [viewingNote, toast, user]);
 
-  const handleDeleteViewerNote = async () => {
+  const handleDeleteViewerNote = useCallback(async () => {
     if (!viewingNote) return;
+
+    if (viewingNote.userId !== activeUid) {
+      toast({
+        variant: 'destructive',
+        title: 'Authorization Error',
+        description: 'You are not authorized to delete this note.',
+      });
+      setIsViewerDeleteDialogOpen(false);
+      return;
+    }
 
     try {
       await deleteDoc(doc(db, 'notes', viewingNote.id));
@@ -215,12 +267,17 @@ export function NotesDashboard() {
     }
 
     setIsViewerDeleteDialogOpen(false);
-  };
+  }, [viewingNote, activeUid, toast, user]);
+
+  const handleOpenViewerDeleteDialogOpen = useCallback(() => {
+    setIsViewerDeleteDialogOpen(true);
+  }, []);
 
   return (
     <div className="relative flex min-h-screen flex-col p-4 md:p-8 pb-4 md:pb-8">
       <div className="flex-1 pb-28 md:pb-32">
         <NotesHeader
+          searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
         />
 
@@ -275,37 +332,23 @@ export function NotesDashboard() {
               <div className={`mt-8 transition-all duration-300 lg:grid ${splitViewMinHeightClass} ${splitViewGridClass} lg:gap-5`}>
               <aside className="hidden lg:block overflow-y-auto pr-1">
                 <div className="space-y-2">
-                  {filteredNotes.map((note) => {
-                    const isActive = note.id === viewingNote.id;
-                    const relativeTime = note.updatedAt
-                      ? formatDistanceToNow(note.updatedAt.toDate(), { addSuffix: true })
-                      : 'just now';
-
-                    return (
-                      <button
-                        key={note.id}
-                        type="button"
-                        onClick={() => handleViewNote(note)}
-                        className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                          isActive
-                            ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
-                            : 'border-primary/20 bg-card/70 hover:border-primary/60 hover:bg-card'
-                        }`}
-                      >
-                        <p className="truncate font-note text-sm text-primary">{note.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{relativeTime}</p>
-                      </button>
-                    );
-                  })}
+                  {filteredNotes.map((note) => (
+                    <SidebarNoteItem
+                      key={note.id}
+                      note={note}
+                      isActive={note.id === viewingNote.id}
+                      onClick={handleViewNote}
+                    />
+                  ))}
                 </div>
               </aside>
               <div className="hidden min-w-0 lg:block">
                 <NoteViewer
                   note={viewingNote}
-                  onBack={() => setViewingNote(null)}
-                  onEdit={() => handleOpenModal(viewingNote)}
+                  onBack={handleBackViewerNote}
+                  onEdit={handleEditViewerNote}
                   onCopy={handleCopyViewerNote}
-                  onDelete={() => setIsViewerDeleteDialogOpen(true)}
+                  onDelete={handleOpenViewerDeleteDialogOpen}
                 />
               </div>
             </div>
@@ -320,20 +363,41 @@ export function NotesDashboard() {
             <div className="mb-6 rounded-full bg-primary/10 p-4 shadow-[0_0_20px_hsl(var(--primary)/0.2)] transition-transform duration-500 group-hover:scale-110">
                <FileText className="h-10 w-10 text-primary" />
             </div>
-            <h2 className="mb-2 font-headline text-2xl text-primary tracking-wide drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)]">
-              NO NOTES FOUND
-            </h2>
-            <p className="mb-8 max-w-[280px] text-sm leading-relaxed text-muted-foreground">
-              Looks empty here. Create your first note and start building your knowledge.
-            </p>
-            <Button
-              onClick={() => handleOpenModal()}
-              variant="outline"
-              className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create First Note
-            </Button>
+
+            {notes.length > 0 ? (
+              <>
+                <h2 className="mb-2 font-headline text-2xl text-primary tracking-wide drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)]">
+                  NO RESULTS FOUND
+                </h2>
+                <p className="mb-8 max-w-[280px] text-sm leading-relaxed text-muted-foreground">
+                  We couldn't find any notes matching your search.
+                </p>
+                <Button
+                  onClick={() => setSearchTerm('')}
+                  variant="outline"
+                  className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
+                >
+                  Clear Search
+                </Button>
+              </>
+            ) : (
+              <>
+                <h2 className="mb-2 font-headline text-2xl text-primary tracking-wide drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)]">
+                  NO NOTES FOUND
+                </h2>
+                <p className="mb-8 max-w-[280px] text-sm leading-relaxed text-muted-foreground">
+                  Looks empty here. Create your first note and start building your knowledge.
+                </p>
+                <Button
+                  onClick={() => handleOpenModal()}
+                  variant="outline"
+                  className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create First Note
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -361,10 +425,10 @@ export function NotesDashboard() {
           <div className="h-full">
             <NoteViewer
               note={viewingNote}
-              onBack={() => setViewingNote(null)}
-              onEdit={() => handleOpenModal(viewingNote)}
+              onBack={handleBackViewerNote}
+              onEdit={handleEditViewerNote}
               onCopy={handleCopyViewerNote}
-              onDelete={() => setIsViewerDeleteDialogOpen(true)}
+              onDelete={handleOpenViewerDeleteDialogOpen}
             />
           </div>
         </div>
