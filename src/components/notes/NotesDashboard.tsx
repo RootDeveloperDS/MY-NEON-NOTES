@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, useDeferredValue } from 'react';
 import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
@@ -12,7 +12,7 @@ import { NotesFooter } from '@/components/notes/NotesFooter';
 const NoteModal = dynamic(() => import('@/components/notes/NoteModal').then(mod => mod.NoteModal), { ssr: false });
 const NoteViewer = dynamic(() => import('@/components/notes/NoteViewer').then(mod => mod.NoteViewer), { ssr: false });
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Search } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +32,7 @@ export function NotesDashboard() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
@@ -133,15 +134,15 @@ export function NotesDashboard() {
   };
 
   const filteredNotes = useMemo(() => {
-    if (!searchTerm) return notes;
+    if (!deferredSearchTerm) return notes;
     // Bolt Optimization: Extract invariant (lowercased term) out of filter loop to prevent O(n) redundant string operations
-    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
     return notes.filter(
       (note) =>
         note.title.toLowerCase().includes(lowercasedSearchTerm) ||
         note.content.toLowerCase().includes(lowercasedSearchTerm)
     );
-  }, [notes, searchTerm]);
+  }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
     const result: Note[][] = Array.from({ length: cols }, () => []);
@@ -221,6 +222,7 @@ export function NotesDashboard() {
     <div className="relative flex min-h-screen flex-col p-4 md:p-8 pb-4 md:pb-8">
       <div className="flex-1 pb-28 md:pb-32">
         <NotesHeader
+          searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
         />
 
@@ -318,22 +320,30 @@ export function NotesDashboard() {
           <div className="group relative flex w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-10 text-center sm:p-12">
             <div className="pointer-events-none absolute inset-0 bg-primary/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
             <div className="mb-6 rounded-full bg-primary/10 p-4 shadow-[0_0_20px_hsl(var(--primary)/0.2)] transition-transform duration-500 group-hover:scale-110">
-               <FileText className="h-10 w-10 text-primary" />
+              {notes.length > 0 ? (
+                <Search className="h-10 w-10 text-primary" />
+              ) : (
+                <FileText className="h-10 w-10 text-primary" />
+              )}
             </div>
             <h2 className="mb-2 font-headline text-2xl text-primary tracking-wide drop-shadow-[0_0_5px_hsl(var(--primary)/0.5)]">
-              NO NOTES FOUND
+              {notes.length > 0 ? 'NO RESULTS FOUND' : 'NO NOTES FOUND'}
             </h2>
             <p className="mb-8 max-w-[280px] text-sm leading-relaxed text-muted-foreground">
-              Looks empty here. Create your first note and start building your knowledge.
+              {notes.length > 0
+                ? `No notes match "${searchTerm}". Try a different search term.`
+                : 'Looks empty here. Create your first note and start building your knowledge.'}
             </p>
-            <Button
-              onClick={() => handleOpenModal()}
-              variant="outline"
-              className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create First Note
-            </Button>
+            {notes.length === 0 && (
+              <Button
+                onClick={() => handleOpenModal()}
+                variant="outline"
+                className="relative z-10 border-primary/50 bg-primary/10 text-primary transition-all duration-300 hover:bg-primary/20 hover:text-primary hover:shadow-[0_0_15px_hsl(var(--primary)/0.35)]"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create First Note
+              </Button>
+            )}
           </div>
         </div>
       )}

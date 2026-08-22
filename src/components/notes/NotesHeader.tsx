@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, memo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Github, ExternalLink } from 'lucide-react';
+import { Search, Github, ExternalLink, X } from 'lucide-react';
 import Link from 'next/link';
 import { UserProfile } from '@/components/auth/UserProfile';
 import Image from 'next/image';
@@ -11,15 +11,14 @@ import { trackEvent } from '@/lib/analytics';
 import { useAuth } from '@/hooks/use-auth';
 
 interface NotesHeaderProps {
+  searchTerm: string;
   onSearchChange: (term: string) => void;
 }
 
 // Bolt Optimization: Wrap NotesHeader with React.memo to prevent unnecessary re-renders when dashboard state (like viewingNote) updates.
-export const NotesHeader = memo(function NotesHeader({ onSearchChange }: NotesHeaderProps) {
+export const NotesHeader = memo(function NotesHeader({ searchTerm, onSearchChange }: NotesHeaderProps) {
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
-  // Bolt Optimization: Added debounce timer ref to prevent state updates on every keystroke
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [kbdShortcut, setKbdShortcut] = useState('Ctrl');
 
   useEffect(() => {
@@ -28,11 +27,6 @@ export const NotesHeader = memo(function NotesHeader({ onSearchChange }: NotesHe
       setKbdShortcut(isMac ? '⌘' : 'Ctrl');
     }
 
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
   }, []);
 
   useEffect(() => {
@@ -75,24 +69,35 @@ export const NotesHeader = memo(function NotesHeader({ onSearchChange }: NotesHe
           <Input
             ref={inputRef}
             type="search"
+            value={searchTerm}
             placeholder="Search notes..."
-            className="pl-10 pr-16 h-11 focus-visible:ring-primary/50 focus-visible:shadow-[0_0_15px_hsl(var(--primary)/0.3)] transition-all duration-300"
+            className="pl-10 pr-10 md:pr-24 h-11 focus-visible:ring-primary/50 focus-visible:shadow-[0_0_15px_hsl(var(--primary)/0.3)] transition-all duration-300 [&::-webkit-search-cancel-button]:hidden"
             onChange={(e) => {
-              // Bolt Optimization: Debounce search input to prevent main thread blocking during typing
-              if (debounceTimerRef.current) {
-                clearTimeout(debounceTimerRef.current);
-              }
-              const value = e.target.value;
-              debounceTimerRef.current = setTimeout(() => {
-                onSearchChange(value);
-              }, 300);
+              onSearchChange(e.target.value);
             }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
-                inputRef.current?.blur();
+                if (searchTerm) {
+                  onSearchChange('');
+                } else {
+                  inputRef.current?.blur();
+                }
               }
             }}
           />
+          {searchTerm && (
+            <button
+              onClick={() => {
+                onSearchChange('');
+                inputRef.current?.focus();
+              }}
+              className="absolute right-3 md:right-20 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden h-6 select-none items-center gap-1 rounded border border-primary/20 bg-muted/30 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 md:flex group-focus-within:border-primary/50 group-focus-within:text-primary/70">
             <span className="text-[10px]">{kbdShortcut}</span>K
           </kbd>
