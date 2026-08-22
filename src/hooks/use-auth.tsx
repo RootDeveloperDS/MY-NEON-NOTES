@@ -70,7 +70,7 @@ function AuthProviderInternal({ children }: { children: ReactNode }) {
       }
       
       setLoading(true);
-      apiFetch(`https://visar-backend.onrender.com/api/verify_uid_return_customtoken_for_neon_notes?uid=${urlUid}`)
+      apiFetch(`https://visar-backend.onrender.com/api/verify_uid_return_customtoken_for_neon_notes?uid=${encodeURIComponent(urlUid)}`)
         .then(res => {
           if (!res.ok) {
             throw new Error('Network response was not ok');
