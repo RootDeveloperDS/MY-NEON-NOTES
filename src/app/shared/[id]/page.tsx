@@ -6,13 +6,15 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
 import dynamic from 'next/dynamic';
-const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
-import { detectCodeBlock } from '@/lib/code-detect';
-import { Loader } from 'lucide-react';
+import { detectContentType, LANGUAGE_DISPLAY_NAMES } from '@/lib/code-detect';
+import { ViewModeToggle, type ViewMode } from '@/components/notes/ViewModeToggle';
+import { Loader, Globe, FileCode2, BookText, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
-import { Globe, FileCode2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotesFooter } from '@/components/notes/NotesFooter';
+
+const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
+const NoteMarkdown = dynamic(() => import('@/components/notes/NoteMarkdown').then(mod => mod.NoteMarkdown), { ssr: false });
 
 export default function SharedNotePage() {
   const { id } = useParams();
@@ -20,6 +22,7 @@ export default function SharedNotePage() {
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('markdown');
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [isContentCopied, setIsContentCopied] = useState(false);
 
@@ -52,6 +55,17 @@ export default function SharedNotePage() {
     fetchNote();
   }, [id]);
 
+  const contentDetection = useMemo(
+    () => (note ? detectContentType(note.content) : null),
+    [note]
+  );
+
+  useEffect(() => {
+    if (contentDetection) {
+      setViewMode(contentDetection.isMarkdown || contentDetection.isCode ? 'markdown' : 'raw');
+    }
+  }, [contentDetection]);
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -82,7 +96,7 @@ export default function SharedNotePage() {
     );
   }
 
-  if (error || !note) {
+  if (error || !note || !contentDetection) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-background p-4 text-center">
         <h1 className="text-3xl font-headline text-destructive tracking-widest uppercase">Access Denied</h1>
@@ -93,23 +107,6 @@ export default function SharedNotePage() {
       </div>
     );
   }
-
-  // Bolt Optimization: Memoize expensive code detection using useMemo to avoid running heavy regex on every render (e.g. when copying link/content).
-  const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
-
-  const languageLabels: Record<string, string> = {
-    javascript: 'JavaScript',
-    typescript: 'TypeScript',
-    python: 'Python',
-    cpp: 'C++',
-    java: 'Java',
-    csharp: 'C#',
-    go: 'Go',
-    rust: 'Rust',
-    php: 'PHP',
-    ruby: 'Ruby',
-    unknown: '',
-  };
 
   return (
     <main className="min-h-screen bg-background text-foreground font-body p-4 sm:p-8 flex flex-col">
@@ -122,7 +119,8 @@ export default function SharedNotePage() {
             </div>
             <span className="font-headline tracking-widest text-primary/80 group-hover:text-primary transition-colors hidden sm:inline-block">NEON NOTES</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
             <Button variant="ghost" size="sm" onClick={handleCopyContent} className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
               {isContentCopied ? <Check className="h-4 w-4 mr-1 sm:mr-2 text-green-500" /> : <Copy className="h-4 w-4 mr-1 sm:mr-2" />}
               <span className="hidden sm:inline">{isContentCopied ? 'Note Copied' : 'Copy Note'}</span>
@@ -143,12 +141,21 @@ export default function SharedNotePage() {
             </span>
             <span>•</span>
             <span className="font-mono uppercase tracking-widest">{note.updatedAt ? format(note.updatedAt.toDate(), 'PPpp') : ''}</span>
-            {codeDetection.isCode && codeDetection.language !== 'unknown' && (
+            {contentDetection.isMarkdown && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-1.5 py-0.5 font-semibold text-accent uppercase tracking-wider">
+                  <BookText className="h-3 w-3" />
+                  Markdown
+                </span>
+              </>
+            )}
+            {contentDetection.isCode && contentDetection.language !== 'unknown' && (
               <>
                 <span>•</span>
                 <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-semibold text-primary uppercase tracking-wider">
                   <FileCode2 className="h-3 w-3" />
-                  {languageLabels[codeDetection.language]}
+                  {LANGUAGE_DISPLAY_NAMES[contentDetection.language]}
                 </span>
               </>
             )}
@@ -159,14 +166,20 @@ export default function SharedNotePage() {
         </header>
 
         {/* Note Content */}
-        <section className="prose prose-sm sm:prose-base dark:prose-invert max-w-none font-note leading-relaxed opacity-90">
-          {codeDetection.isCode ? (
+        <section className="min-h-[300px] w-full">
+          {viewMode === 'raw' ? (
+            <div className="rounded-xl overflow-hidden border border-primary/20 bg-card/40 p-6 shadow-inner">
+              <pre className="whitespace-pre-wrap break-words font-note text-sm sm:text-base leading-relaxed text-foreground/90 select-text">
+                {note.content}
+              </pre>
+            </div>
+          ) : contentDetection.isCode ? (
             <div className="rounded-xl overflow-hidden border border-primary/20 shadow-[0_0_30px_hsl(var(--primary)/0.05)]">
-              <NoteCodeBlock content={note.content} language={codeDetection.language} className="!m-0 text-xs sm:text-sm !p-6" />
+              <NoteCodeBlock content={note.content} language={contentDetection.language} className="!m-0 text-xs sm:text-sm !p-6" />
             </div>
           ) : (
-            <div className="whitespace-pre-wrap p-6 rounded-xl bg-card/30 border border-primary/10 shadow-inner">
-              {note.content}
+            <div className="rounded-xl border border-primary/15 bg-card/30 p-6 sm:p-8 shadow-[0_0_30px_hsl(var(--primary)/0.05)]">
+              <NoteMarkdown content={note.content} />
             </div>
           )}
         </section>

@@ -4,12 +4,12 @@ import { useState, useMemo, memo } from 'react';
 import type { Note } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { FilePenLine, Trash2, Copy, FileCode2, Globe, Share2, Check } from 'lucide-react';
+import { FilePenLine, Trash2, Copy, FileCode2, BookText, Globe, Share2, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
-import { detectCodeBlock } from '@/lib/code-detect';
+import { detectContentType, LANGUAGE_DISPLAY_NAMES } from '@/lib/code-detect';
 import dynamic from 'next/dynamic';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -121,22 +121,8 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
     }
   };
   
-  // Bolt Optimization: Memoize expensive code detection using useMemo to avoid running heavy regex on every render.
-  const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
-  
-  const languageLabels: Record<string, string> = {
-    javascript: 'JavaScript',
-    typescript: 'TypeScript',
-    python: 'Python',
-    cpp: 'C++',
-    java: 'Java',
-    csharp: 'C#',
-    go: 'Go',
-    rust: 'Rust',
-    php: 'PHP',
-    ruby: 'Ruby',
-    unknown: '',
-  };
+  // Bolt Optimization: Memoize content detection using useMemo to avoid running heavy regex on every render.
+  const contentDetection = useMemo(() => detectContentType(note.content), [note.content]);
 
   const relativeTime = note.updatedAt ? formatDistanceToNow(note.updatedAt.toDate()).replace('about ', '').trim() : 'just now';
 
@@ -172,10 +158,16 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
                   Public
                 </span>
               )}
-              {codeDetection.isCode && codeDetection.language !== 'unknown' && (
+              {contentDetection.isMarkdown && (
+                <span className="flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold text-accent uppercase tracking-wider shadow-sm">
+                  <BookText className="h-2.5 w-2.5" />
+                  Markdown
+                </span>
+              )}
+              {contentDetection.isCode && contentDetection.language !== 'unknown' && (
                 <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wider shadow-sm">
                   <FileCode2 className="h-2.5 w-2.5" />
-                  {languageLabels[codeDetection.language]}
+                  {LANGUAGE_DISPLAY_NAMES[contentDetection.language]}
                 </span>
               )}
             </div>
@@ -188,9 +180,15 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
 
           {/* Preview content (Code or Text) */}
           <div className="flex-grow">
-            {codeDetection.isCode ? (
+            {contentDetection.isCode ? (
               <div className="max-h-48 overflow-hidden rounded-md relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-12 after:bg-gradient-to-t after:from-background after:to-transparent pointer-events-none shadow-inner border border-primary/10">
-                <NoteCodeBlock content={note.content} language={codeDetection.language} className="!p-3 !m-0 text-[10px] md:text-[11px]" />
+                <NoteCodeBlock
+                  content={note.content}
+                  language={contentDetection.language}
+                  showCopyButton={false}
+                  showLanguageHeader={false}
+                  className="!p-3 !m-0 text-[10px] md:text-[11px]"
+                />
               </div>
             ) : (
               <p className="font-note text-muted-foreground text-sm line-clamp-6 leading-relaxed opacity-90">{note.content}</p>
