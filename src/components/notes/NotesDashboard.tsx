@@ -164,15 +164,23 @@ export function NotesDashboard() {
   // Use useDeferredValue for searchTerm to avoid blocking main thread on render-heavy filter operations
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
+  // Precompute lowercase strings for search to avoid .toLowerCase() calls on every keystroke without breaking referential equality
+  const searchStringMap = useMemo(() => {
+    const map = new Map<string, string>();
+    notes.forEach(note => {
+      map.set(note.id, `${note.title.toLowerCase()} ${note.content.toLowerCase()}`);
+    });
+    return map;
+  }, [notes]);
+
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
-  }, [notes, deferredSearchTerm]);
+    return notes.filter((note) => {
+      const searchStr = searchStringMap.get(note.id);
+      return searchStr ? searchStr.includes(lowercasedSearchTerm) : false;
+    });
+  }, [notes, searchStringMap, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
     const result: Note[][] = Array.from({ length: cols }, () => []);

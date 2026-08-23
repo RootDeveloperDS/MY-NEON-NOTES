@@ -138,7 +138,15 @@ const scoreText = (text: string, patterns: RegExp[]) => {
   }, 0);
 };
 
+// Cache for code detection results to avoid re-running expensive regex on identical text
+const detectionCache = new Map<string, CodeDetectionResult>();
+const MAX_CACHE_SIZE = 100;
+
 export function detectCodeBlock(text: string): CodeDetectionResult {
+  if (detectionCache.has(text)) {
+    return detectionCache.get(text)!;
+  }
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
@@ -192,9 +200,17 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
   const minScore = normalized.length > 200 ? 5 : normalized.length > 100 ? 4 : normalized.length > 40 ? 3 : 2;
   const isCode = FENCE_PATTERN.test(normalized) || maxScore >= minScore;
 
-  return {
+  const result: CodeDetectionResult = {
     isCode,
     language: isCode ? bestLanguage : 'unknown',
     score: maxScore,
   };
+
+  if (detectionCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = detectionCache.keys().next().value;
+    if (firstKey) detectionCache.delete(firstKey);
+  }
+  detectionCache.set(text, result);
+
+  return result;
 }
