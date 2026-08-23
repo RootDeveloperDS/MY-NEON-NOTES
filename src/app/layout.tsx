@@ -9,7 +9,7 @@ import { Orbitron, Source_Code_Pro, Roboto } from 'next/font/google';
 
 export { metadata } from './metadata';
 
-// Bolt Optimization: Replace external Google Fonts with next/font/google for zero-layout-shift and self-hosted fonts
+// Font Optimization: Replace external Google Fonts with next/font/google for zero-layout-shift and self-hosted fonts
 const orbitron = Orbitron({
   subsets: ['latin'],
   weight: ['400', '700'],

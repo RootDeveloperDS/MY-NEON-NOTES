@@ -21,7 +21,7 @@ interface NoteCardProps {
   onView: (note: Note) => void;
 }
 
-// Bolt Optimization: Wrap NoteCard with React.memo to prevent unnecessary re-renders when parent state changes.
+// Render Optimization: Wrap NoteCard with React.memo to prevent unnecessary re-renders when parent state changes.
 export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   const { toast } = useToast();
   const { activeUid } = useAuth();
@@ -121,7 +121,7 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
     }
   };
   
-  // Bolt Optimization: Memoize content detection using useMemo to avoid running heavy regex on every render.
+  // Content Detection: Memoize content detection using useMemo to avoid running heavy regex on every render.
   const contentDetection = useMemo(() => detectContentType(note.content), [note.content]);
 
   const relativeTime = note.updatedAt ? formatDistanceToNow(note.updatedAt.toDate()).replace('about ', '').trim() : 'just now';
