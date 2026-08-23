@@ -242,3 +242,23 @@
 .note-code-block .token.italic {
   font-style: italic;
 }
+
+.note-markdown-renderer pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.note-markdown-renderer blockquote > :first-child {
+  margin-top: 0;
+}
+
+.note-markdown-renderer blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.note-markdown-renderer table th,
+.note-markdown-renderer table td {
+  border-color: hsl(var(--border) / 0.4);
+}
+

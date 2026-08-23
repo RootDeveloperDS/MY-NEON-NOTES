@@ -154,7 +154,7 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
                   <FormItem className="flex flex-col space-y-3 flex-grow">
                     <FormLabel>Content</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Type your note here... (Code will be highlighted on the dashboard)" className="min-h-[250px] font-note resize-none flex-grow" {...field} />
+                      <Textarea placeholder="Type your note here... (Markdown formatting and code blocks supported)" className="min-h-[250px] font-note resize-none flex-grow" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

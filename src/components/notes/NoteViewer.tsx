@@ -1,20 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, memo } from 'react';
 import type { Note } from '@/lib/types';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Copy, FilePenLine, Trash2, Globe, Share2, Check } from 'lucide-react';
-import { detectCodeBlock } from '@/lib/code-detect';
+import { ArrowLeft, Copy, FilePenLine, Trash2, Globe, Share2, Check, FileCode2, BookText } from 'lucide-react';
+import { detectContentType, LANGUAGE_DISPLAY_NAMES } from '@/lib/code-detect';
+import { ViewModeToggle, type ViewMode } from '@/components/notes/ViewModeToggle';
 import dynamic from 'next/dynamic';
 import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth';
 
 const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
+const NoteMarkdown = dynamic(() => import('@/components/notes/NoteMarkdown').then(mod => mod.NoteMarkdown), { ssr: false });
 
 interface NoteViewerProps {
   note: Note;
@@ -24,16 +27,33 @@ interface NoteViewerProps {
   onDelete: () => void;
 }
 
-export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewerProps) {
+export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewerProps) {
   const createdAt = note.createdAt ? format(note.createdAt.toDate(), 'PPp') : 'Unknown';
   const updatedAt = note.updatedAt ? format(note.updatedAt.toDate(), 'PPp') : 'Unknown';
-  const codeDetection = useMemo(() => detectCodeBlock(note.content), [note.content]);
+  const contentDetection = useMemo(() => detectContentType(note.content), [note.content]);
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    contentDetection.isMarkdown || contentDetection.isCode ? 'markdown' : 'raw'
+  );
   const { toast } = useToast();
+  const { activeUid } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isShared, setIsShared] = useState(false);
 
+  // Sync view mode when switching to a different note
+  useEffect(() => {
+    setViewMode(contentDetection.isMarkdown || contentDetection.isCode ? 'markdown' : 'raw');
+  }, [note.id, contentDetection.isMarkdown, contentDetection.isCode]);
+
   const handleShareClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
+    if (note.userId !== activeUid && !note.isPublic) {
+      toast({
+        variant: 'destructive',
+        title: 'Authorization Error',
+        description: 'You are not authorized to share this note.',
+      });
+      return;
+    }
     try {
       if (!note.isPublic) {
         const { updateDoc, serverTimestamp } = await import('firebase/firestore');
@@ -62,6 +82,14 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
   };
 
   const togglePublic = async (checked: boolean) => {
+    if (note.userId !== activeUid) {
+      toast({
+        variant: 'destructive',
+        title: 'Authorization Error',
+        description: 'You are not authorized to change the visibility of this note.',
+      });
+      return;
+    }
     try {
       const { updateDoc, serverTimestamp } = await import('firebase/firestore');
       await updateDoc(doc(db, 'notes', note.id), { isPublic: checked, updatedAt: serverTimestamp() });
@@ -101,6 +129,18 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
                   Public
                 </span>
               )}
+              {contentDetection.isMarkdown && (
+                <span className="flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent uppercase tracking-wider mt-1 shadow-sm">
+                  <BookText className="h-3 w-3" />
+                  Markdown
+                </span>
+              )}
+              {contentDetection.isCode && contentDetection.language !== 'unknown' && (
+                <span className="flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary uppercase tracking-wider mt-1 shadow-sm">
+                  <FileCode2 className="h-3 w-3" />
+                  {LANGUAGE_DISPLAY_NAMES[contentDetection.language]}
+                </span>
+              )}
             </div>
             <CardDescription className="text-xs leading-relaxed">
               <span className="block">Created: {createdAt}</span>
@@ -124,34 +164,44 @@ export function NoteViewer({ note, onBack, onEdit, onCopy, onDelete }: NoteViewe
                 {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
               </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onEdit} aria-label="Edit note" title="Edit note">
-              <FilePenLine className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={(e) => { onCopy(); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }} aria-label="Copy note content" title="Copy note content">
-              {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive/80 hover:text-destructive"
-              onClick={onDelete}
-              aria-label="Delete note"
-              title="Delete note"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+                <FilePenLine className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => { onCopy(); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }} aria-label="Copy note content" title="Copy note content">
+                {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive/80 hover:text-destructive"
+                onClick={onDelete}
+                aria-label="Delete note"
+                title="Delete note"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+        </div>
+
+        {/* View Mode Toggle Toolbar */}
+        <div className="flex items-center justify-between pt-1">
+          <div className="text-xs text-muted-foreground font-mono">
+            {viewMode === 'markdown' ? 'Markdown Formatted View' : 'Plain Text / Raw Source'}
           </div>
+          <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto p-5">
-        {codeDetection.isCode ? (
-          <NoteCodeBlock content={note.content} language={codeDetection.language} />
-        ) : (
-          <pre className="whitespace-pre-wrap break-words font-note text-sm leading-7 text-foreground">
+        {viewMode === 'raw' ? (
+          <pre className="whitespace-pre-wrap break-words font-note text-sm leading-7 text-foreground/90 bg-card/40 p-5 rounded-xl border border-primary/15 shadow-inner select-text">
             {note.content}
           </pre>
+        ) : contentDetection.isCode ? (
+          <NoteCodeBlock content={note.content} language={contentDetection.language} />
+        ) : (
+          <NoteMarkdown content={note.content} />
         )}
       </CardContent>
     </Card>
   );
-}
+});
