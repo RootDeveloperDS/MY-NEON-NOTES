@@ -12,8 +12,8 @@ const NotifySchema = z.object({
   deviceType: z.string().max(255).optional().nullable(),
   screen: z.string().max(255).optional().nullable(),
   language: z.string().max(255).optional().nullable(),
-  page: z.string().max(255).optional().nullable(),
-  referrer: z.string().max(255).optional().nullable(),
+  page: z.string().max(2048).optional().nullable(),
+  referrer: z.string().max(2048).optional().nullable(),
   ip: z.string().max(255).optional().nullable(),
   geo: z.string().max(255).optional().nullable(),
   isp: z.string().max(255).optional().nullable(),
@@ -75,9 +75,25 @@ export async function POST(req: Request) {
     const timestamp = time || format(new Date(), "M/d/yyyy, h:mm:ss a 'UTC'");
     const userDisplay = escapeHtml(userDisplayName) || 'Anonymous';
     const emailStr = userEmail ? ` (${escapeHtml(userEmail)})` : '';
-    const detailsHtml = details
-      ? `\n📋 <b>Details:</b>\n  • <b>Info:</b> ${escapeHtml(details)}`
-      : '';
+    
+    let detailsHtml = '';
+    if (details) {
+      const lines = details.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length > 1) {
+        const formattedLines = lines.map(line => {
+          const colonIndex = line.indexOf(':');
+          if (colonIndex > 0 && !line.startsWith('http://') && !line.startsWith('https://')) {
+            const key = line.slice(0, colonIndex).trim();
+            const value = line.slice(colonIndex + 1).trim();
+            return `  • <b>${escapeHtml(key)}:</b> ${escapeHtml(value)}`;
+          }
+          return `  • ${escapeHtml(line)}`;
+        });
+        detailsHtml = `\n📋 <b>Details:</b>\n${formattedLines.join('\n')}`;
+      } else {
+        detailsHtml = `\n📋 <b>Details:</b>\n  • <b>Info:</b> ${escapeHtml(details)}`;
+      }
+    }
 
     const message = `🚀 <b>[MY NEON NOTES] — Action Alert</b>
 

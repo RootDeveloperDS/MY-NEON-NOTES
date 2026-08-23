@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -12,6 +12,8 @@ import { Loader, Globe, FileCode2, BookText, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { NotesFooter } from '@/components/notes/NotesFooter';
+import { useAuth } from '@/hooks/use-auth';
+import { trackEvent } from '@/lib/analytics';
 
 const NoteCodeBlock = dynamic(() => import('@/components/notes/NoteCodeBlock').then(mod => mod.NoteCodeBlock), { ssr: false });
 const NoteMarkdown = dynamic(() => import('@/components/notes/NoteMarkdown').then(mod => mod.NoteMarkdown), { ssr: false });
@@ -19,6 +21,8 @@ const NoteMarkdown = dynamic(() => import('@/components/notes/NoteMarkdown').the
 export default function SharedNotePage() {
   const { id } = useParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const hasTrackedRef = useRef<string | null>(null);
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,15 +38,70 @@ export default function SharedNotePage() {
         const docRef = doc(db, 'notes', id);
         const docSnap = await getDoc(docRef);
 
+        const isClient = typeof window !== 'undefined';
+        const fullPath = isClient
+          ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+          : `/shared/${id}`;
+
         if (docSnap.exists()) {
           const noteData = docSnap.data() as Note;
           if (noteData.isPublic) {
             setNote({ ...noteData, id: docSnap.id });
+
+            if (hasTrackedRef.current !== id) {
+              hasTrackedRef.current = id;
+              const details = [
+                `Note Title: ${noteData.title}`,
+                `Note ID: ${docSnap.id}`,
+                `Note Author ID: ${noteData.userId || 'Unknown'}`,
+                `Route: ${fullPath}`,
+              ].join('\n');
+
+              trackEvent(
+                'Shared Note Visit',
+                details,
+                user?.displayName || 'Shared Visitor (Guest)',
+                user?.email || null
+              );
+            }
           } else {
             setError('This note is private.');
+
+            if (hasTrackedRef.current !== id) {
+              hasTrackedRef.current = id;
+              const details = [
+                `Note Title: ${noteData.title || 'Private Note'}`,
+                `Note ID: ${docSnap.id}`,
+                `Status: Access Denied (Private)`,
+                `Route: ${fullPath}`,
+              ].join('\n');
+
+              trackEvent(
+                'Shared Note Visit (Private)',
+                details,
+                user?.displayName || 'Shared Visitor (Guest)',
+                user?.email || null
+              );
+            }
           }
         } else {
           setError('Note not found.');
+
+          if (hasTrackedRef.current !== id) {
+            hasTrackedRef.current = id;
+            const details = [
+              `Note ID: ${id}`,
+              `Status: Note Not Found / Deleted`,
+              `Route: ${fullPath}`,
+            ].join('\n');
+
+            trackEvent(
+              'Shared Note Visit (Not Found)',
+              details,
+              user?.displayName || 'Shared Visitor (Guest)',
+              user?.email || null
+            );
+          }
         }
       } catch (err) {
         console.error(err);
@@ -53,7 +112,7 @@ export default function SharedNotePage() {
     };
 
     fetchNote();
-  }, [id]);
+  }, [id, user]);
 
   const contentDetection = useMemo(
     () => (note ? detectContentType(note.content) : null),

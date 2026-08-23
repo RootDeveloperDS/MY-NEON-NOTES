@@ -104,8 +104,11 @@ export async function trackEvent(
     const ua = isClient ? navigator.userAgent : '';
     const { browser, os, deviceType } = parseUserAgent(ua);
     const geo = isClient ? await getVisitorGeo() : { ip: 'Unknown', city: '', region: '', country: '', isp: 'Unknown' };
-
     const locationGeoStr = [geo.city, geo.region, geo.country].filter(Boolean).join(', ') || 'Unknown Location';
+
+    const fullPathWithQuery = isClient
+      ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+      : '/';
 
     const payload = {
       eventType,
@@ -117,7 +120,7 @@ export async function trackEvent(
       deviceType,
       screen: isClient ? `${window.screen?.width || 0}x${window.screen?.height || 0}` : 'Unknown',
       language: isClient ? navigator.language || 'en-US' : 'en-US',
-      page: isClient ? window.location.pathname : '/',
+      page: fullPathWithQuery,
       referrer: isClient ? document.referrer || 'Direct / Bookmark' : 'Direct / Bookmark',
       ip: geo.ip,
       geo: locationGeoStr,
