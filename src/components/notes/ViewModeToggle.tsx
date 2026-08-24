@@ -35,14 +35,14 @@ export const ViewModeToggle = memo(function ViewModeToggle({
         aria-pressed={mode === 'markdown'}
         title="View with Markdown formatting"
         className={cn(
-          'h-7 px-2.5 text-xs font-mono transition-all duration-200 gap-1.5 rounded-md',
+          'h-7 px-2 sm:px-2.5 text-xs font-mono transition-all duration-200 gap-0 sm:gap-1.5 rounded-md',
           mode === 'markdown'
             ? 'bg-primary/20 text-primary font-semibold shadow-[0_0_12px_hsl(var(--primary)/0.3)] hover:bg-primary/25 hover:text-primary'
             : 'text-muted-foreground hover:text-foreground hover:bg-transparent'
         )}
       >
         <BookText className="h-3.5 w-3.5" />
-        <span>Markdown</span>
+        <span className="hidden sm:inline">Markdown</span>
       </Button>
 
       <Button
@@ -53,14 +53,14 @@ export const ViewModeToggle = memo(function ViewModeToggle({
         aria-pressed={mode === 'raw'}
         title="View as plain text without Markdown formatting"
         className={cn(
-          'h-7 px-2.5 text-xs font-mono transition-all duration-200 gap-1.5 rounded-md',
+          'h-7 px-2 sm:px-2.5 text-xs font-mono transition-all duration-200 gap-0 sm:gap-1.5 rounded-md',
           mode === 'raw'
             ? 'bg-primary/20 text-primary font-semibold shadow-[0_0_12px_hsl(var(--primary)/0.3)] hover:bg-primary/25 hover:text-primary'
             : 'text-muted-foreground hover:text-foreground hover:bg-transparent'
         )}
       >
         <FileText className="h-3.5 w-3.5" />
-        <span>Plain Text</span>
+        <span className="hidden sm:inline">Plain Text</span>
       </Button>
     </div>
   );

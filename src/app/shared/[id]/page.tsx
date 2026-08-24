@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
 import dynamic from 'next/dynamic';
 import { detectContentType, LANGUAGE_DISPLAY_NAMES } from '@/lib/code-detect';
 import { ViewModeToggle, type ViewMode } from '@/components/notes/ViewModeToggle';
-import { Loader, Globe, FileCode2, BookText, Copy, Check } from 'lucide-react';
+import { Loader, Globe, FileCode2, BookText, Copy, Check, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { NotesFooter } from '@/components/notes/NotesFooter';
@@ -135,6 +137,21 @@ export default function SharedNotePage() {
     }
   };
 
+  const handleShare = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: note?.title || 'Neon Note',
+          url: window.location.href,
+        });
+        return;
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError') return;
+      }
+    }
+    handleCopyLink();
+  };
+
   const handleCopyContent = async () => {
     if (!note) return;
     try {
@@ -172,20 +189,49 @@ export default function SharedNotePage() {
       <div className="mx-auto w-full max-w-4xl flex-grow space-y-8">
         {/* Top Navigation Bar */}
         <nav className="flex items-center justify-between border-b border-primary/10 pb-4">
-          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => router.push('/')}>
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-primary/10 group-hover:bg-primary/20 transition-colors">
-              <span className="font-headline text-primary font-bold">N</span>
-            </div>
-            <span className="font-headline tracking-widest text-primary/80 group-hover:text-primary transition-colors hidden sm:inline-block">NEON NOTES</span>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/" className="flex items-center gap-2.5 group shrink-0" title="Neon Notes Home">
+            <Image
+              src="/favicon.svg"
+              alt="Neon Notes Logo"
+              width={32}
+              height={32}
+              priority
+              className="drop-shadow-[0_0_5px_hsl(var(--primary))] transition-transform group-hover:scale-105"
+            />
+            <span className="font-headline text-lg tracking-widest text-primary drop-shadow-[0_0_5px_hsl(var(--primary)/0.6)] group-hover:text-primary transition-colors hidden sm:inline-block">
+              NEON NOTES
+            </span>
+          </Link>
+          <div className="flex items-center gap-1 sm:gap-2">
             <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
-            <Button variant="ghost" size="sm" onClick={handleCopyContent} className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-              {isContentCopied ? <Check className="h-4 w-4 mr-1 sm:mr-2 text-green-500" /> : <Copy className="h-4 w-4 mr-1 sm:mr-2" />}
-              <span className="hidden sm:inline">{isContentCopied ? 'Note Copied' : 'Copy Note'}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCopyContent}
+              title={isContentCopied ? 'Content copied to clipboard!' : 'Copy note content'}
+              aria-label="Copy note content"
+              className="h-8 px-2 sm:h-9 sm:px-3 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              {isContentCopied ? (
+                <Check className="h-4 w-4 mr-0 sm:mr-2 text-green-500 shrink-0" />
+              ) : (
+                <Copy className="h-4 w-4 mr-0 sm:mr-2 shrink-0" />
+              )}
+              <span className="hidden sm:inline">{isContentCopied ? 'Content Copied' : 'Copy Content'}</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleCopyLink} className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-              {isLinkCopied ? <Check className="h-4 w-4 mr-1 sm:mr-2 text-green-500" /> : <Copy className="h-4 w-4 mr-1 sm:mr-2" />}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShare}
+              title={isLinkCopied ? 'Share link copied!' : 'Share note link'}
+              aria-label="Share note link"
+              className="h-8 px-2 sm:h-9 sm:px-3 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              {isLinkCopied ? (
+                <Check className="h-4 w-4 mr-0 sm:mr-2 text-green-500 shrink-0" />
+              ) : (
+                <Share2 className="h-4 w-4 mr-0 sm:mr-2 shrink-0" />
+              )}
               <span className="hidden sm:inline">{isLinkCopied ? 'Link Copied' : 'Share Link'}</span>
             </Button>
           </div>
