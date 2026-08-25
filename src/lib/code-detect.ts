@@ -395,7 +395,28 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
+const detectContentTypeCache = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 500;
+
 export function detectContentType(text: string): ContentDetectionResult {
+  if (detectContentTypeCache.has(text)) {
+    return detectContentTypeCache.get(text)!;
+  }
+
+  const result = _detectContentType(text);
+
+  if (detectContentTypeCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = detectContentTypeCache.keys().next().value;
+    if (firstKey !== undefined) {
+      detectContentTypeCache.delete(firstKey);
+    }
+  }
+
+  detectContentTypeCache.set(text, result);
+  return result;
+}
+
+function _detectContentType(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
@@ -471,7 +492,27 @@ export function detectContentType(text: string): ContentDetectionResult {
 /**
  * Retained for backwards compatibility across existing components.
  */
+const detectCodeBlockCache = new Map<string, CodeDetectionResult>();
+
 export function detectCodeBlock(text: string): CodeDetectionResult {
+  if (detectCodeBlockCache.has(text)) {
+    return detectCodeBlockCache.get(text)!;
+  }
+
+  const result = _detectCodeBlock(text);
+
+  if (detectCodeBlockCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = detectCodeBlockCache.keys().next().value;
+    if (firstKey !== undefined) {
+      detectCodeBlockCache.delete(firstKey);
+    }
+  }
+
+  detectCodeBlockCache.set(text, result);
+  return result;
+}
+
+function _detectCodeBlock(text: string): CodeDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
