@@ -18,10 +18,16 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 import { trackEvent } from '@/lib/analytics';
 import { useRouter } from 'next/navigation';
 
+// Module-level WeakMap to cache lowercased strings for each Note object
+// This preserves referential equality of Note objects while avoiding O(n) `.toLowerCase()` recalculations on every keystroke
+const noteSearchCache = new WeakMap<Note, { title: string; content: string }>();
+
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
+
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
 
@@ -164,14 +170,25 @@ export function NotesDashboard() {
   // Use useDeferredValue for searchTerm to avoid blocking main thread on render-heavy filter operations
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
-  const filteredNotes = useMemo(() => {
+const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
+
+    return notes.filter((note) => {
+      let cachedStrings = noteSearchCache.get(note);
+      if (!cachedStrings) {
+        cachedStrings = {
+          title: note.title.toLowerCase(),
+          content: note.content.toLowerCase()
+        };
+        noteSearchCache.set(note, cachedStrings);
+      }
+
+      return (
+        cachedStrings.title.includes(lowercasedSearchTerm) ||
+        cachedStrings.content.includes(lowercasedSearchTerm)
+      );
+    });
   }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
