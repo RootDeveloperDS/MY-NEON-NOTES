@@ -392,6 +392,9 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+const contentTypeCache = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 100;
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
@@ -400,6 +403,26 @@ export function detectContentType(text: string): ContentDetectionResult {
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
   }
+
+  if (contentTypeCache.has(normalized)) {
+    return contentTypeCache.get(normalized)!;
+  }
+
+  const result = _detectContentTypeInner(normalized);
+
+  if (contentTypeCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = contentTypeCache.keys().next().value;
+    if (firstKey !== undefined) {
+      contentTypeCache.delete(firstKey);
+    }
+  }
+  contentTypeCache.set(normalized, result);
+
+  return result;
+}
+
+function _detectContentTypeInner(normalized: string): ContentDetectionResult {
+
 
   // 1. Check if the text is entirely a single fenced code block (e.g. ```python\ndef foo():\n```)
   const singleFenceMatch = normalized.match(/^```([^\s\n]*)\n([\s\S]*?)\n?```$/);
@@ -468,6 +491,9 @@ export function detectContentType(text: string): ContentDetectionResult {
   };
 }
 
+
+const codeBlockCache = new Map<string, CodeDetectionResult>();
+
 /**
  * Retained for backwards compatibility across existing components.
  */
@@ -476,6 +502,26 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
   }
+
+  if (codeBlockCache.has(normalized)) {
+    return codeBlockCache.get(normalized)!;
+  }
+
+  const result = _detectCodeBlockInner(normalized);
+
+  if (codeBlockCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = codeBlockCache.keys().next().value;
+    if (firstKey !== undefined) {
+      codeBlockCache.delete(firstKey);
+    }
+  }
+  codeBlockCache.set(normalized, result);
+
+  return result;
+}
+
+function _detectCodeBlockInner(normalized: string): CodeDetectionResult {
+
 
   // 1. Check for markdown code fences (e.g. ```python)
   const fenceMatch = normalized.match(/^```([^\s]+)/);
