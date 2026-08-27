@@ -25,6 +25,10 @@ const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
 
+// Module-level WeakMap to lazily cache the lowercase representation of a Note object.
+// This avoids redundant string computations on every keystroke during search.
+const noteSearchCache = new WeakMap<Note, string>();
+
 // Extract sidebar note item to a separate memoized component to avoid O(n) rendering recalculations (e.g., formatDistanceToNow) when unrelated state changes.
 const SidebarNoteItem = React.memo(({
   note,
@@ -167,11 +171,15 @@ export function NotesDashboard() {
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
+
+    return notes.filter((note) => {
+      let searchString = noteSearchCache.get(note);
+      if (!searchString) {
+        searchString = `${note.title} ${note.content}`.toLowerCase();
+        noteSearchCache.set(note, searchString);
+      }
+      return searchString.includes(lowercasedSearchTerm);
+    });
   }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
