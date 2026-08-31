@@ -164,15 +164,28 @@ export function NotesDashboard() {
   // Use useDeferredValue for searchTerm to avoid blocking main thread on render-heavy filter operations
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
+  // Lazy WeakMap cache for search string to prevent O(n) string allocation and .toLowerCase() calls on every keystroke
+  // Preserves object referential equality so NoteCard React.memo works properly.
+  const searchCache = useMemo(() => new WeakMap<Note, { title: string; content: string }>(), []);
+
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
-  }, [notes, deferredSearchTerm]);
+    return notes.filter((note) => {
+      let cached = searchCache.get(note);
+      if (!cached) {
+        cached = {
+          title: note.title.toLowerCase(),
+          content: note.content.toLowerCase()
+        };
+        searchCache.set(note, cached);
+      }
+      return (
+        cached.title.includes(lowercasedSearchTerm) ||
+        cached.content.includes(lowercasedSearchTerm)
+      );
+    });
+  }, [notes, deferredSearchTerm, searchCache]);
 
   const masonryColumns = useMemo(() => {
     const result: Note[][] = Array.from({ length: cols }, () => []);
