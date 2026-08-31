@@ -120,9 +120,10 @@ export const NoteMarkdown = memo(function NoteMarkdown({ content, className }: N
             return <tr className="hover:bg-primary/5 transition-colors">{children}</tr>;
           },
           a({ href, children }) {
+            const isUnsafe = href && /^(?:javascript|vbscript|data):/i.test(href.trim());
             return (
               <a
-                href={href}
+                href={isUnsafe ? undefined : href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary hover:text-accent transition-colors font-medium"
