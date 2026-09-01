@@ -395,7 +395,34 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
+
+const CONTENT_CACHE_MAX_SIZE = 1000;
+const contentDetectionCache = new Map<string, ContentDetectionResult>();
+
 export function detectContentType(text: string): ContentDetectionResult {
+  if (contentDetectionCache.has(text)) {
+    const cachedResult = contentDetectionCache.get(text)!;
+    // Move to end of map to mark as most recently used (LRU)
+    contentDetectionCache.delete(text);
+    contentDetectionCache.set(text, cachedResult);
+    return cachedResult;
+  }
+
+  const result = _detectContentTypeImpl(text);
+
+  if (contentDetectionCache.size >= CONTENT_CACHE_MAX_SIZE) {
+    const firstKey = contentDetectionCache.keys().next().value;
+    if (firstKey !== undefined) {
+      contentDetectionCache.delete(firstKey);
+    }
+  }
+
+  contentDetectionCache.set(text, result);
+  return result;
+}
+
+function _detectContentTypeImpl(text: string): ContentDetectionResult {
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
