@@ -164,13 +164,24 @@ export function NotesDashboard() {
   // Use useDeferredValue for searchTerm to avoid blocking main thread on render-heavy filter operations
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
+  // WeakMap to lazily cache lowercase note strings to prevent O(n) recalculations on keystrokes
+  const noteCache = useRef(new WeakMap<Note, { title: string; content: string }>());
+
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
     return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
+      (note) => {
+        let cached = noteCache.current.get(note);
+        if (!cached) {
+          cached = {
+            title: note.title.toLowerCase(),
+            content: note.content.toLowerCase()
+          };
+          noteCache.current.set(note, cached);
+        }
+        return cached.title.includes(lowercasedSearchTerm) || cached.content.includes(lowercasedSearchTerm);
+      }
     );
   }, [notes, deferredSearchTerm]);
 

@@ -392,13 +392,35 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+const MAX_CACHE_SIZE = 1000;
+const contentTypeCache = new Map<string, ContentDetectionResult>();
+const codeBlockCache = new Map<string, CodeDetectionResult>();
+
+function setCacheWithLRU<K, V>(cache: Map<K, V>, key: K, value: V, maxSize: number = MAX_CACHE_SIZE) {
+  if (cache.size >= maxSize) {
+    const firstKey = cache.keys().next().value;
+    if (firstKey !== undefined) cache.delete(firstKey);
+  }
+  cache.set(key, value);
+}
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
 export function detectContentType(text: string): ContentDetectionResult {
+  const cached = contentTypeCache.get(text);
+  if (cached) {
+    // Move to end for LRU
+    contentTypeCache.delete(text);
+    contentTypeCache.set(text, cached);
+    return cached;
+  }
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
-    return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+    const result: ContentDetectionResult = { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+    setCacheWithLRU(contentTypeCache, text, result);
+    return result;
   }
 
   // 1. Check if the text is entirely a single fenced code block (e.g. ```python\ndef foo():\n```)
@@ -406,13 +428,15 @@ export function detectContentType(text: string): ContentDetectionResult {
   if (singleFenceMatch) {
     const rawLang = singleFenceMatch[1];
     const mapped = normalizeLanguage(rawLang);
-    return {
+    const result: ContentDetectionResult = {
       type: 'code',
       isMarkdown: false,
       isCode: true,
       language: mapped,
       score: 100,
     };
+    setCacheWithLRU(contentTypeCache, text, result);
+    return result;
   }
 
   // 2. Check for Code Block detection
@@ -425,56 +449,73 @@ export function detectContentType(text: string): ContentDetectionResult {
 
   // If code signals dominate and there are NO mixed fenced blocks or markdown tables/tasklists, classify as CODE
   if (codeResult.isCode && codeResult.score >= 2 && !hasFencedBlocks && !hasMarkdownTables && !hasTaskLists) {
-    return {
+    const result: ContentDetectionResult = {
       type: 'code',
       isMarkdown: false,
       isCode: true,
       language: codeResult.language,
       score: codeResult.score,
     };
+    setCacheWithLRU(contentTypeCache, text, result);
+    return result;
   }
 
   const markdownCheck = isMarkdownContent(normalized);
 
   // 4. If it meets genuine Markdown criteria:
   if (markdownCheck.isMarkdown) {
-    return {
+    const result: ContentDetectionResult = {
       type: 'markdown',
       isMarkdown: true,
       isCode: false,
       language: 'markdown',
       score: markdownCheck.score,
     };
+    setCacheWithLRU(contentTypeCache, text, result);
+    return result;
   }
 
   // 5. If code signals exist at all:
   if (codeResult.isCode) {
-    return {
+    const result: ContentDetectionResult = {
       type: 'code',
       isMarkdown: false,
       isCode: true,
       language: codeResult.language,
       score: codeResult.score,
     };
+    setCacheWithLRU(contentTypeCache, text, result);
+    return result;
   }
 
   // 6. Default to plain text
-  return {
+  const result: ContentDetectionResult = {
     type: 'text',
     isMarkdown: false,
     isCode: false,
     language: 'unknown',
     score: 0,
   };
+  setCacheWithLRU(contentTypeCache, text, result);
+  return result;
 }
 
 /**
  * Retained for backwards compatibility across existing components.
  */
 export function detectCodeBlock(text: string): CodeDetectionResult {
+  const cached = codeBlockCache.get(text);
+  if (cached) {
+    codeBlockCache.delete(text);
+    codeBlockCache.set(text, cached);
+    return cached;
+  }
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
-    return { isCode: false, language: 'unknown', score: 0 };
+    const result: CodeDetectionResult = { isCode: false, language: 'unknown', score: 0 };
+    setCacheWithLRU(codeBlockCache, text, result);
+    return result;
   }
 
   // 1. Check for markdown code fences (e.g. ```python)
@@ -482,14 +523,18 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
   if (fenceMatch && fenceMatch[1]) {
     const mappedLang = normalizeLanguage(fenceMatch[1]);
     if (mappedLang !== 'unknown') {
-      return { isCode: true, language: mappedLang, score: 100 };
+      const result: CodeDetectionResult = { isCode: true, language: mappedLang, score: 100 };
+      setCacheWithLRU(codeBlockCache, text, result);
+      return result;
     }
   }
 
   // 2. Check for unmistakable strong signals
   for (const signal of STRONG_SIGNALS) {
     if (signal.pattern.test(normalized)) {
-      return { isCode: true, language: signal.lang, score: 50 };
+      const result: CodeDetectionResult = { isCode: true, language: signal.lang, score: 50 };
+      setCacheWithLRU(codeBlockCache, text, result);
+      return result;
     }
   }
 
@@ -528,10 +573,12 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
     }
   }
 
-  return {
+  const result: CodeDetectionResult = {
     isCode,
     language: isCode ? bestLanguage : 'unknown',
     score: maxScore,
   };
+  setCacheWithLRU(codeBlockCache, text, result);
+  return result;
 }
 
