@@ -140,6 +140,7 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
         onKeyDown={handleKeyDown}
         tabIndex={0}
         role="button"
+        aria-label={`View note: ${note.title}`}
         className="group relative flex flex-col w-full border border-primary/20 bg-card/60 hover:bg-card/90 transition-all duration-300 rounded-lg overflow-hidden cursor-pointer shadow-sm hover:shadow-[0_0_20px_hsl(var(--primary)/0.2)] hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         {/* Top Accent line */}
@@ -198,13 +199,13 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
 
         {/* Footer actions panel (fades in on hover) */}
         <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-primary/10 bg-primary/5 opacity-80 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleShareClick} aria-label="Share note" title="Share note">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleShareClick} aria-label={isShared ? "Link copied" : "Share note"} title={isShared ? "Link copied" : "Share note"}>
             {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleEditClick} aria-label="Edit note" title="Edit note">
             <FilePenLine className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleCopyClick} aria-label="Copy note content" title="Copy note content">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleCopyClick} aria-label={isCopied ? "Note copied" : "Copy note content"} title={isCopied ? "Note copied" : "Copy note content"}>
             {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={handleDeleteClick} aria-label="Delete note" title="Delete note">
