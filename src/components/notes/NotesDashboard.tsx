@@ -42,6 +42,7 @@ const SidebarNoteItem = React.memo(({
   return (
     <button
       type="button"
+      aria-current={isActive ? "true" : undefined}
       onClick={() => onClick(note)}
       className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
         isActive
