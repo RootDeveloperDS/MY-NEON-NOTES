@@ -21,6 +21,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { trackEvent } from '@/lib/analytics';
 import { useRouter } from 'next/navigation';
 
+// WeakMap cache for search string precomputation
+const noteSearchStringCache = new WeakMap<Note, { title: string; content: string }>();
+
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
@@ -167,11 +170,20 @@ export function NotesDashboard() {
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
+    return notes.filter((note) => {
+      let searchStrings = noteSearchStringCache.get(note);
+      if (!searchStrings) {
+        searchStrings = {
+          title: note.title.toLowerCase(),
+          content: note.content.toLowerCase(),
+        };
+        noteSearchStringCache.set(note, searchStrings);
+      }
+      return (
+        searchStrings.title.includes(lowercasedSearchTerm) ||
+        searchStrings.content.includes(lowercasedSearchTerm)
+      );
+    });
   }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
