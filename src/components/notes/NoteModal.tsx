@@ -38,6 +38,7 @@ interface NoteModalProps {
 export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps) {
   const { toast } = useToast();
   const { activeUid, user } = useAuth();
+  const [kbdShortcut, setKbdShortcut] = useState('Ctrl');
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
@@ -63,6 +64,13 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
       });
     }
   }, [note, form, isOpen]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
+      setKbdShortcut(isMac ? '⌘' : 'Ctrl');
+    }
+  }, []);
 
   const isSubmitting = form.formState.isSubmitting;
 
@@ -132,7 +140,16 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           <DialogDescription>{note ? 'Modify your note details below.' : 'Fill out the details for your new note.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-grow flex flex-col overflow-hidden">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                form.handleSubmit(onSubmit)();
+              }
+            }}
+            className="space-y-4 flex-grow flex flex-col overflow-hidden"
+          >
             <div className="flex-grow overflow-y-auto pr-2 space-y-4 max-h-[calc(90vh-180px)]">
               <FormField
                 control={form.control}
@@ -182,20 +199,25 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
                 )}
               />
             </div>
-            <DialogFooter className="flex-shrink-0 pt-4 border-t border-accent/10">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting || !activeUid} aria-busy={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90 flex items-center">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save Note'
-                )}
-              </Button>
+            <DialogFooter className="flex-shrink-0 pt-4 border-t border-accent/10 flex items-center justify-between sm:justify-between w-full">
+              <div className="hidden sm:flex items-center text-xs text-muted-foreground mr-auto opacity-70">
+                <kbd className="font-mono bg-muted/50 border border-muted-foreground/20 rounded px-1.5 py-0.5 mr-1">{kbdShortcut}</kbd> + <kbd className="font-mono bg-muted/50 border border-muted-foreground/20 rounded px-1.5 py-0.5 ml-1 mr-2">Enter</kbd> to save
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto justify-end">
+                <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting || !activeUid} aria-busy={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90 flex items-center">
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Note'
+                  )}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>
