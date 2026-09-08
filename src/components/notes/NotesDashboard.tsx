@@ -55,6 +55,9 @@ const SidebarNoteItem = React.memo(({
   );
 });
 
+
+const searchStringCache = new WeakMap<Note, { title: string; content: string }>();
+
 export function NotesDashboard() {
   const { activeUid, user, loading: authLoading, logout, isUrlAuth } = useAuth();
   const { toast } = useToast();
@@ -167,11 +170,20 @@ export function NotesDashboard() {
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
+    return notes.filter((note) => {
+      let cached = searchStringCache.get(note);
+      if (!cached) {
+        cached = {
+          title: note.title.toLowerCase(),
+          content: note.content.toLowerCase()
+        };
+        searchStringCache.set(note, cached);
+      }
+      return (
+        cached.title.includes(lowercasedSearchTerm) ||
+        cached.content.includes(lowercasedSearchTerm)
+      );
+    });
   }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
