@@ -395,7 +395,38 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
+
+const detectionCache = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 100;
+const MAX_INPUT_SIZE = 50000;
+
+/**
+ * Detects whether content is pure code, Markdown, or plain text.
+ */
 export function detectContentType(text: string): ContentDetectionResult {
+  if (text.length > MAX_INPUT_SIZE) {
+    return _detectContentType(text);
+  }
+
+  if (detectionCache.has(text)) {
+    return detectionCache.get(text)!;
+  }
+
+  const result = _detectContentType(text);
+
+  if (detectionCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = detectionCache.keys().next().value;
+    if (firstKey !== undefined) {
+      detectionCache.delete(firstKey);
+    }
+  }
+
+  detectionCache.set(text, result);
+  return result;
+}
+
+function _detectContentType(text: string): ContentDetectionResult {
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
@@ -471,7 +502,36 @@ export function detectContentType(text: string): ContentDetectionResult {
 /**
  * Retained for backwards compatibility across existing components.
  */
+
+const codeBlockCache = new Map<string, CodeDetectionResult>();
+
+/**
+ * Retained for backwards compatibility across existing components.
+ */
 export function detectCodeBlock(text: string): CodeDetectionResult {
+  if (text.length > MAX_INPUT_SIZE) {
+    return _detectCodeBlock(text);
+  }
+
+  if (codeBlockCache.has(text)) {
+    return codeBlockCache.get(text)!;
+  }
+
+  const result = _detectCodeBlock(text);
+
+  if (codeBlockCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = codeBlockCache.keys().next().value;
+    if (firstKey !== undefined) {
+      codeBlockCache.delete(firstKey);
+    }
+  }
+
+  codeBlockCache.set(text, result);
+  return result;
+}
+
+function _detectCodeBlock(text: string): CodeDetectionResult {
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
