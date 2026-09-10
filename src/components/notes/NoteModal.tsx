@@ -64,6 +64,15 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
     }
   }, [note, form, isOpen]);
 
+  const [kbdShortcut, setKbdShortcut] = useState('Ctrl');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
+      setKbdShortcut(isMac ? '⌘' : 'Ctrl');
+    }
+  }, []);
+
   const isSubmitting = form.formState.isSubmitting;
 
   const onSubmit = async (data: NoteFormValues) => {
@@ -132,7 +141,16 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           <DialogDescription>{note ? 'Modify your note details below.' : 'Fill out the details for your new note.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-grow flex flex-col overflow-hidden">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                form.handleSubmit(onSubmit)();
+              }
+            }}
+            className="space-y-4 flex-grow flex flex-col overflow-hidden"
+          >
             <div className="flex-grow overflow-y-auto pr-2 space-y-4 max-h-[calc(90vh-180px)]">
               <FormField
                 control={form.control}
@@ -193,7 +211,12 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
                     Saving...
                   </>
                 ) : (
-                  'Save Note'
+                  <>
+                    Save Note
+                    <kbd className="ml-2 hidden h-5 select-none items-center gap-1 rounded border border-accent-foreground/20 bg-accent-foreground/10 px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                      <span className="text-[10px]">{kbdShortcut}</span>Enter
+                    </kbd>
+                  </>
                 )}
               </Button>
             </DialogFooter>
