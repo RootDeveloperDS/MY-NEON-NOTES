@@ -21,6 +21,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { trackEvent } from '@/lib/analytics';
 import { useRouter } from 'next/navigation';
 
+// Module-level WeakMap to lazily cache lowercase search strings for each note.
+// This prevents O(n) re-calculations on every keystroke and preserves referential equality of search string objects.
+const noteSearchCache = new WeakMap<Note, { titleLower: string, contentLower: string }>();
+
+
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
@@ -164,14 +169,21 @@ export function NotesDashboard() {
   // Use useDeferredValue for searchTerm to avoid blocking main thread on render-heavy filter operations
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
-  const filteredNotes = useMemo(() => {
+    const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
+
+    return notes.filter((note) => {
+      let cached = noteSearchCache.get(note);
+      if (!cached) {
+        cached = {
+          titleLower: note.title.toLowerCase(),
+          contentLower: note.content.toLowerCase()
+        };
+        noteSearchCache.set(note, cached);
+      }
+      return cached.titleLower.includes(lowercasedSearchTerm) || cached.contentLower.includes(lowercasedSearchTerm);
+    });
   }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
