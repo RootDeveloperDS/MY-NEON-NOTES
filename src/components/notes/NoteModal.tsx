@@ -38,6 +38,13 @@ interface NoteModalProps {
 export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps) {
   const { toast } = useToast();
   const { activeUid, user } = useAuth();
+  const [shortcutHint, setShortcutHint] = useState<string>('');
+
+  useEffect(() => {
+    // Detect platform for keyboard shortcut hint
+    const isMac = typeof window !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac');
+    setShortcutHint(isMac ? '⌘+Enter' : 'Ctrl+Enter');
+  }, []);
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
@@ -132,7 +139,16 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           <DialogDescription>{note ? 'Modify your note details below.' : 'Fill out the details for your new note.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-grow flex flex-col overflow-hidden">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                form.handleSubmit(onSubmit)();
+              }
+            }}
+            className="space-y-4 flex-grow flex flex-col overflow-hidden"
+          >
             <div className="flex-grow overflow-y-auto pr-2 space-y-4 max-h-[calc(90vh-180px)]">
               <FormField
                 control={form.control}
@@ -186,14 +202,21 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
               <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting || !activeUid} aria-busy={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90 flex items-center">
+              <Button type="submit" disabled={isSubmitting || !activeUid} aria-busy={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90 flex items-center relative group">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Saving...
                   </>
                 ) : (
-                  'Save Note'
+                  <>
+                    Save Note
+                    {shortcutHint && (
+                      <span className="ml-2 hidden text-[10px] opacity-70 sm:inline-block">
+                        {shortcutHint}
+                      </span>
+                    )}
+                  </>
                 )}
               </Button>
             </DialogFooter>
