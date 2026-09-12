@@ -38,6 +38,19 @@ interface NoteModalProps {
 export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps) {
   const { toast } = useToast();
   const { activeUid, user } = useAuth();
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsMac(navigator.userAgent.toLowerCase().includes("mac"));
+    }
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      form.handleSubmit(onSubmit)();
+    }
+  };
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
@@ -132,7 +145,7 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           <DialogDescription>{note ? 'Modify your note details below.' : 'Fill out the details for your new note.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-grow flex flex-col overflow-hidden">
+          <form onSubmit={form.handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-4 flex-grow flex flex-col overflow-hidden">
             <div className="flex-grow overflow-y-auto pr-2 space-y-4 max-h-[calc(90vh-180px)]">
               <FormField
                 control={form.control}
@@ -186,14 +199,20 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
               <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting || !activeUid} aria-busy={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90 flex items-center">
+              <Button type="submit" disabled={isSubmitting || !activeUid} aria-busy={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90 flex items-center gap-2">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Saving...
                   </>
                 ) : (
-                  'Save Note'
+                  <>
+                    <span>Save Note</span>
+                    <kbd className="hidden md:inline-flex items-center gap-1 px-1.5 font-mono text-[10px] font-medium text-accent-foreground/60 bg-accent-foreground/10 rounded border border-accent-foreground/20">
+                      <span>{isMac ? '⌘' : 'Ctrl'}</span>
+                      <span>Enter</span>
+                    </kbd>
+                  </>
                 )}
               </Button>
             </DialogFooter>
