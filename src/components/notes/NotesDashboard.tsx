@@ -21,6 +21,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { trackEvent } from '@/lib/analytics';
 import { useRouter } from 'next/navigation';
 
+const noteSearchCache = new WeakMap<Note, { title: string; content: string }>();
+
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
@@ -168,9 +170,17 @@ export function NotesDashboard() {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
     return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
+      (note) => {
+        let cached = noteSearchCache.get(note);
+        if (!cached) {
+          cached = {
+            title: note.title.toLowerCase(),
+            content: note.content.toLowerCase(),
+          };
+          noteSearchCache.set(note, cached);
+        }
+        return cached.title.includes(lowercasedSearchTerm) || cached.content.includes(lowercasedSearchTerm);
+      }
     );
   }, [notes, deferredSearchTerm]);
 
