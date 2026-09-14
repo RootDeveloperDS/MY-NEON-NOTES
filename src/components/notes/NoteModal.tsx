@@ -64,7 +64,15 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
     }
   }, [note, form, isOpen]);
 
+  const [platformKey, setPlatformKey] = useState<string>('Ctrl');
   const isSubmitting = form.formState.isSubmitting;
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined') {
+      const isMac = navigator.userAgent.toLowerCase().includes('mac');
+      setPlatformKey(isMac ? '⌘' : 'Ctrl');
+    }
+  }, []);
 
   const onSubmit = async (data: NoteFormValues) => {
     if (!activeUid) {
@@ -132,7 +140,18 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           <DialogDescription>{note ? 'Modify your note details below.' : 'Fill out the details for your new note.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-grow flex flex-col overflow-hidden">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!isSubmitting) {
+                  form.handleSubmit(onSubmit)();
+                }
+              }
+            }}
+            className="space-y-4 flex-grow flex flex-col overflow-hidden"
+          >
             <div className="flex-grow overflow-y-auto pr-2 space-y-4 max-h-[calc(90vh-180px)]">
               <FormField
                 control={form.control}
@@ -193,7 +212,12 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
                     Saving...
                   </>
                 ) : (
-                  'Save Note'
+                  <>
+                    Save Note
+                    <span className="ml-2 text-xs opacity-70">
+                      ({platformKey}+Enter)
+                    </span>
+                  </>
                 )}
               </Button>
             </DialogFooter>
