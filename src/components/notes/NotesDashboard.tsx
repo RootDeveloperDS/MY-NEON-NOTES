@@ -25,6 +25,10 @@ const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
 
+// Lazy cache for computed search strings to prevent O(n) recalculations on every keystroke
+// while preserving object references for React.memo
+const searchStringCache = new WeakMap<Note, string>();
+
 // Extract sidebar note item to a separate memoized component to avoid O(n) rendering recalculations (e.g., formatDistanceToNow) when unrelated state changes.
 const SidebarNoteItem = React.memo(({
   note,
@@ -167,11 +171,14 @@ export function NotesDashboard() {
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
+    return notes.filter((note) => {
+      let searchStr = searchStringCache.get(note);
+      if (!searchStr) {
+        searchStr = (note.title + ' ' + note.content).toLowerCase();
+        searchStringCache.set(note, searchStr);
+      }
+      return searchStr.includes(lowercasedSearchTerm);
+    });
   }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
