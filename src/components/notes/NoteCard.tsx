@@ -4,7 +4,7 @@ import { useState, useMemo, memo } from 'react';
 import type { Note } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { FilePenLine, Trash2, Copy, FileCode2, BookText, Globe, Share2, Check } from 'lucide-react';
+import { FilePenLine, Trash2, Copy, FileCode2, BookText, Globe, Share2, Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -26,6 +26,7 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
   const { toast } = useToast();
   const { activeUid } = useAuth();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isShared, setIsShared] = useState(false);
 
@@ -47,20 +48,23 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
       setIsDeleteDialogOpen(false);
       return;
     }
+    setIsDeleting(true);
     try {
       await deleteDoc(doc(db, 'notes', note.id));
       toast({
         title: 'Note Deleted',
         description: 'The note has been successfully deleted.',
       });
+      setIsDeleteDialogOpen(false);
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Error',
         description: 'Failed to delete the note.',
       });
+    } finally {
+      setIsDeleting(false);
     }
-    setIsDeleteDialogOpen(false);
   };
 
   const handleEditClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -223,9 +227,23 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex items-center"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
