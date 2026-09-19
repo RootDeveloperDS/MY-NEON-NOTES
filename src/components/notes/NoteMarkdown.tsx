@@ -120,6 +120,14 @@ export const NoteMarkdown = memo(function NoteMarkdown({ content, className }: N
             return <tr className="hover:bg-primary/5 transition-colors">{children}</tr>;
           },
           a({ href, children }) {
+            const isUnsafe = /^(?:javascript|vbscript|data):/i.test(href?.trim() || '');
+            if (isUnsafe) {
+              return (
+                <span className="text-destructive font-medium cursor-not-allowed" title="Blocked unsafe link">
+                  {children}
+                </span>
+              );
+            }
             return (
               <a
                 href={href}
