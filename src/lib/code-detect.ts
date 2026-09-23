@@ -395,7 +395,7 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
-export function detectContentType(text: string): ContentDetectionResult {
+function _detectContentType(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
@@ -468,10 +468,26 @@ export function detectContentType(text: string): ContentDetectionResult {
   };
 }
 
+const contentTypeCache = new Map<string, ContentDetectionResult>();
+export function detectContentType(text: string): ContentDetectionResult {
+  if (!text || text.length > 50000) return _detectContentType(text);
+  const cached = contentTypeCache.get(text);
+  if (cached) return cached;
+  const result = _detectContentType(text);
+  if (contentTypeCache.size >= 100) {
+    const firstKey = contentTypeCache.keys().next().value;
+    if (firstKey !== undefined) {
+      contentTypeCache.delete(firstKey);
+    }
+  }
+  contentTypeCache.set(text, result);
+  return result;
+}
+
 /**
  * Retained for backwards compatibility across existing components.
  */
-export function detectCodeBlock(text: string): CodeDetectionResult {
+function _detectCodeBlock(text: string): CodeDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
@@ -535,3 +551,18 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
   };
 }
 
+const codeBlockCache = new Map<string, CodeDetectionResult>();
+export function detectCodeBlock(text: string): CodeDetectionResult {
+  if (!text || text.length > 50000) return _detectCodeBlock(text);
+  const cached = codeBlockCache.get(text);
+  if (cached) return cached;
+  const result = _detectCodeBlock(text);
+  if (codeBlockCache.size >= 100) {
+    const firstKey = codeBlockCache.keys().next().value;
+    if (firstKey !== undefined) {
+      codeBlockCache.delete(firstKey);
+    }
+  }
+  codeBlockCache.set(text, result);
+  return result;
+}
