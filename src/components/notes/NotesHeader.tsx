@@ -96,7 +96,18 @@ export const NotesHeader = memo(function NotesHeader({ searchTerm = '', onSearch
             }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
-                inputRef.current?.blur();
+                if (localSearchTerm) {
+                  e.preventDefault();
+                  setLocalSearchTerm('');
+                  if (debounceTimerRef.current) {
+                    clearTimeout(debounceTimerRef.current);
+                  }
+                  onSearchChange('');
+                  // Delay focus slightly to ensure React state updates have processed
+                  setTimeout(() => inputRef.current?.focus(), 0);
+                } else {
+                  inputRef.current?.blur();
+                }
               }
             }}
           />
