@@ -38,6 +38,14 @@ interface NoteModalProps {
 export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps) {
   const { toast } = useToast();
   const { activeUid, user } = useAuth();
+  const [kbdShortcut, setKbdShortcut] = useState('Ctrl');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
+      setKbdShortcut(isMac ? '⌘' : 'Ctrl');
+    }
+  }, []);
 
   const form = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
@@ -132,7 +140,18 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
           <DialogDescription>{note ? 'Modify your note details below.' : 'Fill out the details for your new note.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-grow flex flex-col overflow-hidden">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!isSubmitting) {
+                  form.handleSubmit(onSubmit)();
+                }
+              }
+            }}
+            className="space-y-4 flex-grow flex flex-col overflow-hidden"
+          >
             <div className="flex-grow overflow-y-auto pr-2 space-y-4 max-h-[calc(90vh-180px)]">
               <FormField
                 control={form.control}
@@ -193,7 +212,12 @@ export function NoteModal({ isOpen, onClose, note, isFirstNote }: NoteModalProps
                     Saving...
                   </>
                 ) : (
-                  'Save Note'
+                  <div className="flex items-center gap-2">
+                    <span>Save Note</span>
+                    <kbd className="hidden sm:flex pointer-events-none select-none items-center gap-1 rounded border border-accent-foreground/20 bg-accent-foreground/10 px-1.5 font-mono text-[10px] font-medium text-accent-foreground opacity-70">
+                      {kbdShortcut}+Enter
+                    </kbd>
+                  </div>
                 )}
               </Button>
             </DialogFooter>
