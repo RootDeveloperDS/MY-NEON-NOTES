@@ -468,10 +468,35 @@ export function detectContentType(text: string): ContentDetectionResult {
   };
 }
 
+const detectCache = new Map<string, CodeDetectionResult>();
+const MAX_CACHE_SIZE = 100;
+
 /**
  * Retained for backwards compatibility across existing components.
  */
 export function detectCodeBlock(text: string): CodeDetectionResult {
+  // Bypass cache for excessively large strings to prevent memory leaks
+  if (text.length > 50000) {
+    return _detectCodeBlock(text);
+  }
+
+  const cached = detectCache.get(text);
+  if (cached) return cached;
+
+  const result = _detectCodeBlock(text);
+
+  if (detectCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = detectCache.keys().next().value;
+    if (firstKey !== undefined) {
+      detectCache.delete(firstKey);
+    }
+  }
+  detectCache.set(text, result);
+
+  return result;
+}
+
+function _detectCodeBlock(text: string): CodeDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
