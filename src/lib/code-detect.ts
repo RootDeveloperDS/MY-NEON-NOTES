@@ -392,10 +392,14 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+const contentTypeCache = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 500;
+const MAX_CACHE_TEXT_LENGTH = 50000;
+
 /**
- * Detects whether content is pure code, Markdown, or plain text.
+ * Internal function for detecting content type.
  */
-export function detectContentType(text: string): ContentDetectionResult {
+function _detectContentType(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
@@ -466,6 +470,33 @@ export function detectContentType(text: string): ContentDetectionResult {
     language: 'unknown',
     score: 0,
   };
+}
+
+/**
+ * Detects whether content is pure code, Markdown, or plain text.
+ * Wraps _detectContentType with a FIFO Map cache to prevent redundant expensive regex operations.
+ */
+export function detectContentType(text: string): ContentDetectionResult {
+  if (text.length > MAX_CACHE_TEXT_LENGTH) {
+    return _detectContentType(text);
+  }
+
+  const cached = contentTypeCache.get(text);
+  if (cached) {
+    return cached;
+  }
+
+  const result = _detectContentType(text);
+
+  if (contentTypeCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = contentTypeCache.keys().next().value;
+    if (firstKey !== undefined) {
+      contentTypeCache.delete(firstKey);
+    }
+  }
+
+  contentTypeCache.set(text, result);
+  return result;
 }
 
 /**
