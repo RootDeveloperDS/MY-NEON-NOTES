@@ -19,9 +19,18 @@ const buildHeaders = async (initHeaders?: HeadersInit): Promise<Headers> => {
 
 export const apiFetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
   const isFirstParty = () => {
-    if (typeof window === 'undefined') return true;
     let urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    // Explicitly allow safe relative paths
+    if (urlString.startsWith('/') && !/^\/([\\\/])/.test(urlString)) return true;
+
     try {
+      if (typeof window === 'undefined') {
+        const fallbackOrigin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+        const parsed = new URL(urlString, fallbackOrigin);
+        return parsed.origin === new URL(fallbackOrigin).origin;
+      }
+
       const parsed = new URL(urlString, window.location.origin);
       return parsed.origin === window.location.origin;
     } catch {
