@@ -19,13 +19,20 @@ const buildHeaders = async (initHeaders?: HeadersInit): Promise<Headers> => {
 
 export const apiFetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
   const isFirstParty = () => {
-    if (typeof window === 'undefined') return true;
     let urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    // Explicitly handle safe relative paths to prevent URL parsing failures
+    if (urlString.startsWith('/') && !/^\/([\\\/])/.test(urlString)) return true;
+
     try {
-      const parsed = new URL(urlString, window.location.origin);
-      return parsed.origin === window.location.origin;
+      const fallbackOrigin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const baseOrigin = typeof window !== 'undefined' ? window.location.origin : new URL(fallbackOrigin).origin;
+      const parsed = new URL(urlString, baseOrigin);
+
+      // Ensure strict validation using the same base origin
+      return parsed.origin === baseOrigin;
     } catch {
-      return false;
+      return false; // Default to false if validation fails or origin is explicitly not verifiable
     }
   };
 
