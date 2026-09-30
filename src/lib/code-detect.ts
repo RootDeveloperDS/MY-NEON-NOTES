@@ -392,13 +392,34 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+// ⚡ Bolt Performance Optimization:
+// Regex processing for content detection is expensive. Memoizing these results
+// prevents redundant O(n) recalculations on every render, especially critical
+// for NoteCard list rendering and ViewMode toggling.
+const detectContentTypeCache = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 500;
+
+function setContentTypeCache(text: string, result: ContentDetectionResult) {
+  if (detectContentTypeCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = detectContentTypeCache.keys().next().value;
+    if (firstKey !== undefined) detectContentTypeCache.delete(firstKey);
+  }
+  detectContentTypeCache.set(text, result);
+}
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
 export function detectContentType(text: string): ContentDetectionResult {
+  if (detectContentTypeCache.has(text)) {
+    return detectContentTypeCache.get(text)!;
+  }
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
-    return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+    const result: ContentDetectionResult = { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+    setContentTypeCache(text, result);
+    return result;
   }
 
   // 1. Check if the text is entirely a single fenced code block (e.g. ```python\ndef foo():\n```)
@@ -406,13 +427,15 @@ export function detectContentType(text: string): ContentDetectionResult {
   if (singleFenceMatch) {
     const rawLang = singleFenceMatch[1];
     const mapped = normalizeLanguage(rawLang);
-    return {
+    const result: ContentDetectionResult = {
       type: 'code',
       isMarkdown: false,
       isCode: true,
       language: mapped,
       score: 100,
     };
+    setContentTypeCache(text, result);
+    return result;
   }
 
   // 2. Check for Code Block detection
@@ -425,53 +448,75 @@ export function detectContentType(text: string): ContentDetectionResult {
 
   // If code signals dominate and there are NO mixed fenced blocks or markdown tables/tasklists, classify as CODE
   if (codeResult.isCode && codeResult.score >= 2 && !hasFencedBlocks && !hasMarkdownTables && !hasTaskLists) {
-    return {
+    const result: ContentDetectionResult = {
       type: 'code',
       isMarkdown: false,
       isCode: true,
       language: codeResult.language,
       score: codeResult.score,
     };
+    setContentTypeCache(text, result);
+    return result;
   }
 
   const markdownCheck = isMarkdownContent(normalized);
 
   // 4. If it meets genuine Markdown criteria:
   if (markdownCheck.isMarkdown) {
-    return {
+    const result: ContentDetectionResult = {
       type: 'markdown',
       isMarkdown: true,
       isCode: false,
       language: 'markdown',
       score: markdownCheck.score,
     };
+    setContentTypeCache(text, result);
+    return result;
   }
 
   // 5. If code signals exist at all:
   if (codeResult.isCode) {
-    return {
+    const result: ContentDetectionResult = {
       type: 'code',
       isMarkdown: false,
       isCode: true,
       language: codeResult.language,
       score: codeResult.score,
     };
+    setContentTypeCache(text, result);
+    return result;
   }
 
   // 6. Default to plain text
-  return {
+  const result: ContentDetectionResult = {
     type: 'text',
     isMarkdown: false,
     isCode: false,
     language: 'unknown',
     score: 0,
   };
+  setContentTypeCache(text, result);
+  return result;
+}
+
+const detectCodeBlockCache = new Map<string, CodeDetectionResult>();
+
+function setCodeBlockCache(text: string, result: CodeDetectionResult) {
+  if (detectCodeBlockCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = detectCodeBlockCache.keys().next().value;
+    if (firstKey !== undefined) detectCodeBlockCache.delete(firstKey);
+  }
+  detectCodeBlockCache.set(text, result);
 }
 
 /**
  * Retained for backwards compatibility across existing components.
  */
 export function detectCodeBlock(text: string): CodeDetectionResult {
+  if (detectCodeBlockCache.has(text)) {
+    return detectCodeBlockCache.get(text)!;
+  }
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
@@ -528,10 +573,12 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
     }
   }
 
-  return {
+  const result: CodeDetectionResult = {
     isCode,
     language: isCode ? bestLanguage : 'unknown',
     score: maxScore,
   };
+  setCodeBlockCache(text, result);
+  return result;
 }
 
