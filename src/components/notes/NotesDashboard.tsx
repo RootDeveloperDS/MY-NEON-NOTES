@@ -5,6 +5,8 @@ import { collection, deleteDoc, doc, onSnapshot, query, orderBy, where } from 'f
 import { db } from '@/lib/firebase';
 import type { Note } from '@/lib/types';
 import dynamic from 'next/dynamic';
+
+const searchStringCache = new WeakMap<Note, { title: string; content: string }>();
 import { NotesHeader } from '@/components/notes/NotesHeader';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { NotesFooter } from '@/components/notes/NotesFooter';
@@ -168,11 +170,17 @@ export function NotesDashboard() {
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
+    return notes.filter((note) => {
+      let cached = searchStringCache.get(note);
+      if (cached === undefined) {
+        cached = {
+          title: note.title.toLowerCase(),
+          content: note.content.toLowerCase()
+        };
+        searchStringCache.set(note, cached);
+      }
+      return cached.title.includes(lowercasedSearchTerm) || cached.content.includes(lowercasedSearchTerm);
+    });
   }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
