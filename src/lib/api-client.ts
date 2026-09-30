@@ -19,7 +19,7 @@ const buildHeaders = async (initHeaders?: HeadersInit): Promise<Headers> => {
 
 export const apiFetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
   const isFirstParty = () => {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined') return false;
     let urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     try {
       const parsed = new URL(urlString, window.location.origin);
