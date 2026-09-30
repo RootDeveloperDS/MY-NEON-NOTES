@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader } from 'lucide-react';
+import { Loader, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 import { trackEvent } from '@/lib/analytics';
 
@@ -218,6 +218,8 @@ export function LoginPage() {
 
 
 function AuthFormFields({ form, formType }: { form: any; formType: 'signIn' | 'signUp' }) {
+    const [showPassword, setShowPassword] = useState(false);
+
     return (
         <div className="space-y-2">
             <FormField
@@ -240,7 +242,20 @@ function AuthFormFields({ form, formType }: { form: any; formType: 'signIn' | 's
                     <FormItem className="space-y-1">
                         <FormLabel className="text-xs">Password</FormLabel>
                         <FormControl>
-                            <Input autoComplete={formType === 'signIn' ? 'current-password' : 'new-password'} type="password" placeholder="P4$sW9rd" className="font-auth-input h-9 text-sm" {...field} />
+                            <div className="relative">
+                                <Input autoComplete={formType === 'signIn' ? 'current-password' : 'new-password'} type={showPassword ? 'text' : 'password'} placeholder="P4$sW9rd" className="font-auth-input h-9 text-sm pr-9" {...field} />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-0 top-0 h-9 w-9 text-muted-foreground hover:text-primary transition-colors focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    title={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                            </div>
                         </FormControl>
                         <FormMessage className="text-[11px]" />
                     </FormItem>
