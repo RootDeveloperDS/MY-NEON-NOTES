@@ -392,10 +392,38 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+const contentDetectionCache = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 500;
+const MAX_CACHEABLE_LENGTH = 50000;
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
+ * Cached to prevent running heavy regex repeatedly on the same text.
  */
 export function detectContentType(text: string): ContentDetectionResult {
+  if (text.length > MAX_CACHEABLE_LENGTH) {
+    return detectContentTypeUncached(text);
+  }
+
+  const cached = contentDetectionCache.get(text);
+  if (cached) {
+    return cached;
+  }
+
+  const result = detectContentTypeUncached(text);
+
+  if (contentDetectionCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = contentDetectionCache.keys().next().value;
+    if (firstKey !== undefined) {
+      contentDetectionCache.delete(firstKey);
+    }
+  }
+
+  contentDetectionCache.set(text, result);
+  return result;
+}
+
+function detectContentTypeUncached(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
