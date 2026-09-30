@@ -392,6 +392,9 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+const contentTypeCache = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 100;
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
@@ -401,6 +404,24 @@ export function detectContentType(text: string): ContentDetectionResult {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
   }
 
+  if (contentTypeCache.has(normalized)) {
+    return contentTypeCache.get(normalized)!;
+  }
+
+  const result = _detectContentType(normalized);
+
+  if (contentTypeCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = contentTypeCache.keys().next().value;
+    if (firstKey !== undefined) {
+      contentTypeCache.delete(firstKey);
+    }
+  }
+
+  contentTypeCache.set(normalized, result);
+  return result;
+}
+
+function _detectContentType(normalized: string): ContentDetectionResult {
   // 1. Check if the text is entirely a single fenced code block (e.g. ```python\ndef foo():\n```)
   const singleFenceMatch = normalized.match(/^```([^\s\n]*)\n([\s\S]*?)\n?```$/);
   if (singleFenceMatch) {
