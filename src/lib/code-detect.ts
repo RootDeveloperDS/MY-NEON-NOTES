@@ -392,80 +392,71 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+
+const MAX_CACHE_SIZE = 100;
+const detectContentTypeCache = new Map<string, ContentDetectionResult>();
+const detectCodeBlockCache = new Map<string, CodeDetectionResult>();
+
+function setWithEviction<K, V>(map: Map<K, V>, key: K, value: V) {
+  if (map.size >= MAX_CACHE_SIZE) {
+    const firstKey = map.keys().next().value;
+    if (firstKey !== undefined) {
+      map.delete(firstKey);
+    }
+  }
+  map.set(key, value);
+}
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
+
 export function detectContentType(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
   }
 
-  // 1. Check if the text is entirely a single fenced code block (e.g. ```python\ndef foo():\n```)
+  const cached = detectContentTypeCache.get(normalized);
+  if (cached) return cached;
+
+  let result: ContentDetectionResult = { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+
   const singleFenceMatch = normalized.match(/^```([^\s\n]*)\n([\s\S]*?)\n?```$/);
   if (singleFenceMatch) {
     const rawLang = singleFenceMatch[1];
     const mapped = normalizeLanguage(rawLang);
-    return {
-      type: 'code',
-      isMarkdown: false,
-      isCode: true,
-      language: mapped,
-      score: 100,
-    };
+    result = { type: 'code', isMarkdown: false, isCode: true, language: mapped, score: 100 };
+    setWithEviction(detectContentTypeCache, normalized, result);
+    return result;
   }
 
-  // 2. Check for Code Block detection
   const codeResult = detectCodeBlock(normalized);
-
-  // 3. Check for structural Markdown indicators
   const hasFencedBlocks = /```[a-zA-Z0-9_-]*\n[\s\S]+?\n```/.test(normalized);
   const hasMarkdownTables = /^\|[^\r\n]+\|[\r\n]+\|(?:\s*:?-+:?\s*\|)+\s*$/m.test(normalized);
   const hasTaskLists = /^\s*[-*+]\s+\[[ xX]\]\s+\S/m.test(normalized);
 
-  // If code signals dominate and there are NO mixed fenced blocks or markdown tables/tasklists, classify as CODE
   if (codeResult.isCode && codeResult.score >= 2 && !hasFencedBlocks && !hasMarkdownTables && !hasTaskLists) {
-    return {
-      type: 'code',
-      isMarkdown: false,
-      isCode: true,
-      language: codeResult.language,
-      score: codeResult.score,
-    };
+    result = { type: 'code', isMarkdown: false, isCode: true, language: codeResult.language, score: codeResult.score };
+    setWithEviction(detectContentTypeCache, normalized, result);
+    return result;
   }
 
   const markdownCheck = isMarkdownContent(normalized);
-
-  // 4. If it meets genuine Markdown criteria:
   if (markdownCheck.isMarkdown) {
-    return {
-      type: 'markdown',
-      isMarkdown: true,
-      isCode: false,
-      language: 'markdown',
-      score: markdownCheck.score,
-    };
+    result = { type: 'markdown', isMarkdown: true, isCode: false, language: 'markdown', score: markdownCheck.score };
+    setWithEviction(detectContentTypeCache, normalized, result);
+    return result;
   }
 
-  // 5. If code signals exist at all:
   if (codeResult.isCode) {
-    return {
-      type: 'code',
-      isMarkdown: false,
-      isCode: true,
-      language: codeResult.language,
-      score: codeResult.score,
-    };
+    result = { type: 'code', isMarkdown: false, isCode: true, language: codeResult.language, score: codeResult.score };
+    setWithEviction(detectContentTypeCache, normalized, result);
+    return result;
   }
 
-  // 6. Default to plain text
-  return {
-    type: 'text',
-    isMarkdown: false,
-    isCode: false,
-    language: 'unknown',
-    score: 0,
-  };
+  setWithEviction(detectContentTypeCache, normalized, result);
+  return result;
 }
 
 /**
@@ -477,23 +468,29 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
     return { isCode: false, language: 'unknown', score: 0 };
   }
 
-  // 1. Check for markdown code fences (e.g. ```python)
+  const cached = detectCodeBlockCache.get(normalized);
+  if (cached) return cached;
+
+  let result: CodeDetectionResult = { isCode: false, language: 'unknown', score: 0 };
+
   const fenceMatch = normalized.match(/^```([^\s]+)/);
   if (fenceMatch && fenceMatch[1]) {
     const mappedLang = normalizeLanguage(fenceMatch[1]);
     if (mappedLang !== 'unknown') {
-      return { isCode: true, language: mappedLang, score: 100 };
+      result = { isCode: true, language: mappedLang, score: 100 };
+      setWithEviction(detectCodeBlockCache, normalized, result);
+      return result;
     }
   }
 
-  // 2. Check for unmistakable strong signals
   for (const signal of STRONG_SIGNALS) {
     if (signal.pattern.test(normalized)) {
-      return { isCode: true, language: signal.lang, score: 50 };
+      result = { isCode: true, language: signal.lang, score: 50 };
+      setWithEviction(detectCodeBlockCache, normalized, result);
+      return result;
     }
   }
 
-  // 3. Score against all languages
   const scores: Record<string, number> = {};
   for (const [lang, patterns] of Object.entries(LANGUAGE_PATTERNS)) {
     if (patterns) {
@@ -511,11 +508,9 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
     }
   }
 
-  // Determine if it's actually code
   const minScore = normalized.length > 200 ? 5 : normalized.length > 100 ? 4 : normalized.length > 40 ? 3 : 2;
   const isCode = /```/.test(normalized) || maxScore >= minScore;
 
-  // Refine C vs C++ disambiguation
   if (isCode && (bestLanguage === 'c' || bestLanguage === 'cpp')) {
     const isDefinitiveCpp = /\b(?:std::|cout|cin|endl|namespace\s+\w+|template\s*<|nullptr|constexpr|virtual\s+\w+|class\s+[a-zA-Z0-9_]+\s*\{|public:|private:|protected:|#include\s*<iostream>|#include\s*<vector>|#include\s*<string>|#include\s*<map>|#include\s*<set>|#include\s*<algorithm>)/.test(normalized);
 
@@ -528,10 +523,13 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
     }
   }
 
-  return {
+  result = {
     isCode,
     language: isCode ? bestLanguage : 'unknown',
     score: maxScore,
   };
+
+  setWithEviction(detectCodeBlockCache, normalized, result);
+  return result;
 }
 
