@@ -392,6 +392,12 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+// Module-level FIFO cache to prevent expensive repeated regex operations on the same text
+// (e.g. when quickly switching tabs or mounting/unmounting components)
+const MAX_CACHE_SIZE = 100;
+const MAX_CACHE_TEXT_LENGTH = 50000;
+const contentTypeCache = new Map<string, ContentDetectionResult>();
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
@@ -401,71 +407,93 @@ export function detectContentType(text: string): ContentDetectionResult {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
   }
 
+  // Skip cache for excessively large inputs to prevent memory bloat
+  const canCache = normalized.length <= MAX_CACHE_TEXT_LENGTH;
+  if (canCache && contentTypeCache.has(normalized)) {
+    return contentTypeCache.get(normalized)!;
+  }
+
+  let result: ContentDetectionResult | undefined;
+
   // 1. Check if the text is entirely a single fenced code block (e.g. ```python\ndef foo():\n```)
   const singleFenceMatch = normalized.match(/^```([^\s\n]*)\n([\s\S]*?)\n?```$/);
   if (singleFenceMatch) {
     const rawLang = singleFenceMatch[1];
     const mapped = normalizeLanguage(rawLang);
-    return {
+    result = {
       type: 'code',
       isMarkdown: false,
       isCode: true,
       language: mapped,
       score: 100,
     };
-  }
+  } else {
+    // 2. Check for Code Block detection
+    const codeResult = detectCodeBlock(normalized);
 
-  // 2. Check for Code Block detection
-  const codeResult = detectCodeBlock(normalized);
+    // 3. Check for structural Markdown indicators
+    const hasFencedBlocks = /```[a-zA-Z0-9_-]*\n[\s\S]+?\n```/.test(normalized);
+    const hasMarkdownTables = /^\|[^\r\n]+\|[\r\n]+\|(?:\s*:?-+:?\s*\|)+\s*$/m.test(normalized);
+    const hasTaskLists = /^\s*[-*+]\s+\[[ xX]\]\s+\S/m.test(normalized);
 
-  // 3. Check for structural Markdown indicators
-  const hasFencedBlocks = /```[a-zA-Z0-9_-]*\n[\s\S]+?\n```/.test(normalized);
-  const hasMarkdownTables = /^\|[^\r\n]+\|[\r\n]+\|(?:\s*:?-+:?\s*\|)+\s*$/m.test(normalized);
-  const hasTaskLists = /^\s*[-*+]\s+\[[ xX]\]\s+\S/m.test(normalized);
+    // If code signals dominate and there are NO mixed fenced blocks or markdown tables/tasklists, classify as CODE
+    if (codeResult.isCode && codeResult.score >= 2 && !hasFencedBlocks && !hasMarkdownTables && !hasTaskLists) {
+      result = {
+        type: 'code',
+        isMarkdown: false,
+        isCode: true,
+        language: codeResult.language,
+        score: codeResult.score,
+      };
+    } else {
+      const markdownCheck = isMarkdownContent(normalized);
 
-  // If code signals dominate and there are NO mixed fenced blocks or markdown tables/tasklists, classify as CODE
-  if (codeResult.isCode && codeResult.score >= 2 && !hasFencedBlocks && !hasMarkdownTables && !hasTaskLists) {
-    return {
-      type: 'code',
-      isMarkdown: false,
-      isCode: true,
-      language: codeResult.language,
-      score: codeResult.score,
-    };
-  }
-
-  const markdownCheck = isMarkdownContent(normalized);
-
-  // 4. If it meets genuine Markdown criteria:
-  if (markdownCheck.isMarkdown) {
-    return {
-      type: 'markdown',
-      isMarkdown: true,
-      isCode: false,
-      language: 'markdown',
-      score: markdownCheck.score,
-    };
-  }
-
-  // 5. If code signals exist at all:
-  if (codeResult.isCode) {
-    return {
-      type: 'code',
-      isMarkdown: false,
-      isCode: true,
-      language: codeResult.language,
-      score: codeResult.score,
-    };
+      // 4. If it meets genuine Markdown criteria:
+      if (markdownCheck.isMarkdown) {
+        result = {
+          type: 'markdown',
+          isMarkdown: true,
+          isCode: false,
+          language: 'markdown',
+          score: markdownCheck.score,
+        };
+      }
+      // 5. If code signals exist at all:
+      else if (codeResult.isCode) {
+        result = {
+          type: 'code',
+          isMarkdown: false,
+          isCode: true,
+          language: codeResult.language,
+          score: codeResult.score,
+        };
+      }
+    }
   }
 
   // 6. Default to plain text
-  return {
-    type: 'text',
-    isMarkdown: false,
-    isCode: false,
-    language: 'unknown',
-    score: 0,
-  };
+  if (result === undefined) {
+    result = {
+      type: 'text',
+      isMarkdown: false,
+      isCode: false,
+      language: 'unknown',
+      score: 0,
+    };
+  }
+
+  // Cache management
+  if (canCache) {
+    if (contentTypeCache.size >= MAX_CACHE_SIZE) {
+      const firstKey = contentTypeCache.keys().next().value;
+      if (firstKey !== undefined) {
+        contentTypeCache.delete(firstKey);
+      }
+    }
+    contentTypeCache.set(normalized, result);
+  }
+
+  return result;
 }
 
 /**
