@@ -395,7 +395,7 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
-export function detectContentType(text: string): ContentDetectionResult {
+function detectContentTypeImpl(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
@@ -471,7 +471,7 @@ export function detectContentType(text: string): ContentDetectionResult {
 /**
  * Retained for backwards compatibility across existing components.
  */
-export function detectCodeBlock(text: string): CodeDetectionResult {
+function detectCodeBlockImpl(text: string): CodeDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
@@ -535,3 +535,31 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
   };
 }
 
+
+
+const MAX_CACHE_SIZE = 100;
+const MAX_CACHE_TEXT_LENGTH = 50000;
+
+function createLruCache<T>(computeFn: (text: string) => T): (text: string) => T {
+  const cache = new Map<string, T>();
+  return (text: string) => {
+    if (text.length > MAX_CACHE_TEXT_LENGTH) {
+      return computeFn(text);
+    }
+    if (cache.has(text)) {
+      return cache.get(text)!;
+    }
+    const result = computeFn(text);
+    if (cache.size >= MAX_CACHE_SIZE) {
+      const firstKey = cache.keys().next().value;
+      if (firstKey !== undefined) {
+        cache.delete(firstKey);
+      }
+    }
+    cache.set(text, result);
+    return result;
+  };
+}
+
+export const detectContentType = createLruCache(detectContentTypeImpl);
+export const detectCodeBlock = createLruCache(detectCodeBlockImpl);
