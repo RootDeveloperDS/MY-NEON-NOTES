@@ -392,10 +392,32 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+// LRU/FIFO Cache for detectContentType to avoid redundant expensive regex evaluations on re-renders
+const MAX_CACHE_SIZE = 500;
+const detectionCache = new Map<string, ContentDetectionResult>();
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
 export function detectContentType(text: string): ContentDetectionResult {
+  if (detectionCache.has(text)) {
+    return detectionCache.get(text)!;
+  }
+
+  const result = _detectContentTypeInternal(text);
+
+  if (detectionCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = detectionCache.keys().next().value;
+    if (firstKey !== undefined) {
+      detectionCache.delete(firstKey);
+    }
+  }
+
+  detectionCache.set(text, result);
+  return result;
+}
+
+function _detectContentTypeInternal(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
