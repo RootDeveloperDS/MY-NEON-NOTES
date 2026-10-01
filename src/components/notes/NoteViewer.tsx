@@ -38,6 +38,8 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
   const { activeUid } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isShared, setIsShared] = useState(false);
+  const [isSharingNetwork, setIsSharingNetwork] = useState(false);
+  const [isTogglingPublic, setIsTogglingPublic] = useState(false);
 
   // Sync view mode when switching to a different note
   useEffect(() => {
@@ -54,6 +56,7 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
       });
       return;
     }
+    setIsSharingNetwork(true);
     try {
       if (!note.isPublic) {
         const { updateDoc, serverTimestamp } = await import('firebase/firestore');
@@ -78,6 +81,8 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
         title: 'Share Error',
         description: 'Failed to make the note public.',
       });
+    } finally {
+      setIsSharingNetwork(false);
     }
   };
 
@@ -90,6 +95,7 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
       });
       return;
     }
+    setIsTogglingPublic(true);
     try {
       const { updateDoc, serverTimestamp } = await import('firebase/firestore');
       await updateDoc(doc(db, 'notes', note.id), { isPublic: checked, updatedAt: serverTimestamp() });
@@ -100,6 +106,8 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
       }
     } catch (error) {
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update visibility.' });
+    } finally {
+      setIsTogglingPublic(false);
     }
   };
 
@@ -156,11 +164,12 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
                 id="public-toggle"
                 checked={!!note.isPublic}
                 onCheckedChange={togglePublic}
+                disabled={isTogglingPublic}
                 className="data-[state=checked]:bg-green-500"
               />
             </div>
             <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-background/40 p-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} aria-label={isShared ? "Link copied" : "Share note"} title={isShared ? "Link copied" : "Share note"}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} disabled={isSharingNetwork} aria-label={isShared ? "Link copied" : "Share note"} title={isShared ? "Link copied" : "Share note"}>
                 {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
               </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onEdit} aria-label="Edit note" title="Edit note">
