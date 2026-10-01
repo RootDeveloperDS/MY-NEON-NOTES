@@ -471,10 +471,26 @@ export function detectContentType(text: string): ContentDetectionResult {
 /**
  * Retained for backwards compatibility across existing components.
  */
+const codeDetectionCache = new Map<string, CodeDetectionResult>();
+const MAX_CACHE_SIZE = 100;
+const MAX_CACHE_TEXT_LENGTH = 50000;
+
 export function detectCodeBlock(text: string): CodeDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
+  }
+
+  const shouldCache = normalized.length <= MAX_CACHE_TEXT_LENGTH;
+
+  if (shouldCache) {
+    const cached = codeDetectionCache.get(normalized);
+    if (cached) {
+      // Move to end (most recently used)
+      codeDetectionCache.delete(normalized);
+      codeDetectionCache.set(normalized, cached);
+      return cached;
+    }
   }
 
   // 1. Check for markdown code fences (e.g. ```python)
@@ -528,10 +544,22 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
     }
   }
 
-  return {
+  const result: CodeDetectionResult = {
     isCode,
     language: isCode ? bestLanguage : 'unknown',
     score: maxScore,
   };
+
+  if (shouldCache) {
+    if (codeDetectionCache.size >= MAX_CACHE_SIZE) {
+      const firstKey = codeDetectionCache.keys().next().value;
+      if (firstKey !== undefined) {
+        codeDetectionCache.delete(firstKey);
+      }
+    }
+    codeDetectionCache.set(normalized, result);
+  }
+
+  return result;
 }
 
