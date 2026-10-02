@@ -83,6 +83,7 @@ export const NotesHeader = memo(function NotesHeader({ searchTerm = '', onSearch
             type="search"
             value={localSearchTerm}
             placeholder="Search notes..."
+            aria-label="Search notes"
             className="pl-10 pr-10 md:pr-24 h-11 focus-visible:ring-primary/50 focus-visible:shadow-[0_0_15px_hsl(var(--primary)/0.3)] transition-all duration-300 [&::-webkit-search-cancel-button]:hidden"
             onChange={(e) => {
               const value = e.target.value;
