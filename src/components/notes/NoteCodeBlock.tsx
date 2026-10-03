@@ -149,8 +149,8 @@ export function NoteCodeBlock({
               variant="ghost"
               size="sm"
               onClick={handleCopyCode}
-              aria-label="Copy code snippet"
-              title="Copy code snippet"
+              aria-label={isCopied ? "Copied!" : "Copy code snippet"}
+              title={isCopied ? "Copied!" : "Copy code snippet"}
               className="h-7 px-2 text-[11px] font-mono text-muted-foreground hover:bg-primary/15 hover:text-primary transition-colors focus-visible:ring-1 focus-visible:ring-primary"
             >
               {isCopied ? (
