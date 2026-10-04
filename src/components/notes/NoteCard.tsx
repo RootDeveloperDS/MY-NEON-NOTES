@@ -29,6 +29,7 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isShared, setIsShared] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(note.content);
@@ -99,6 +100,8 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
       });
       return;
     }
+
+    setIsSharing(true);
     try {
       if (!note.isPublic) {
         const { updateDoc, serverTimestamp } = await import('firebase/firestore');
@@ -123,6 +126,8 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
         title: 'Share Error',
         description: 'Failed to make the note public.',
       });
+    } finally {
+      setIsSharing(false);
     }
   };
   
@@ -204,8 +209,8 @@ export const NoteCard = memo(function NoteCard({ note, onEdit, onView }: NoteCar
 
         {/* Footer actions panel (fades in on hover) */}
         <div className="flex items-center justify-end gap-1 px-4 py-2 border-t border-primary/10 bg-primary/5 opacity-80 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleShareClick} aria-label={isShared ? "Link copied" : "Share note"} title={isShared ? "Link copied" : "Share note"}>
-            {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleShareClick} disabled={isSharing} aria-label={isShared ? "Link copied" : "Share note"} title={isShared ? "Link copied" : "Share note"}>
+            {isSharing ? <Loader2 className="h-4 w-4 animate-spin" /> : isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" onClick={handleEditClick} aria-label="Edit note" title="Edit note">
             <FilePenLine className="h-4 w-4" />

@@ -5,7 +5,7 @@ import type { Note } from '@/lib/types';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Copy, FilePenLine, Trash2, Globe, Share2, Check, FileCode2, BookText } from 'lucide-react';
+import { ArrowLeft, Copy, FilePenLine, Trash2, Globe, Share2, Check, FileCode2, BookText, Loader2 } from 'lucide-react';
 import { detectContentType, LANGUAGE_DISPLAY_NAMES } from '@/lib/code-detect';
 import { ViewModeToggle, type ViewMode } from '@/components/notes/ViewModeToggle';
 import dynamic from 'next/dynamic';
@@ -38,6 +38,8 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
   const { activeUid } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isShared, setIsShared] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isTogglingPublic, setIsTogglingPublic] = useState(false);
 
   // Sync view mode when switching to a different note
   useEffect(() => {
@@ -54,6 +56,8 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
       });
       return;
     }
+
+    setIsSharing(true);
     try {
       if (!note.isPublic) {
         const { updateDoc, serverTimestamp } = await import('firebase/firestore');
@@ -78,6 +82,8 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
         title: 'Share Error',
         description: 'Failed to make the note public.',
       });
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -90,6 +96,8 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
       });
       return;
     }
+
+    setIsTogglingPublic(true);
     try {
       const { updateDoc, serverTimestamp } = await import('firebase/firestore');
       await updateDoc(doc(db, 'notes', note.id), { isPublic: checked, updatedAt: serverTimestamp() });
@@ -100,6 +108,8 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
       }
     } catch (error) {
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update visibility.' });
+    } finally {
+      setIsTogglingPublic(false);
     }
   };
 
@@ -156,12 +166,13 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
                 id="public-toggle"
                 checked={!!note.isPublic}
                 onCheckedChange={togglePublic}
+                disabled={isTogglingPublic}
                 className="data-[state=checked]:bg-green-500"
               />
             </div>
             <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-background/40 p-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} aria-label={isShared ? "Link copied" : "Share note"} title={isShared ? "Link copied" : "Share note"}>
-                {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} disabled={isSharing} aria-label={isShared ? "Link copied" : "Share note"} title={isShared ? "Link copied" : "Share note"}>
+                {isSharing ? <Loader2 className="h-4 w-4 animate-spin" /> : isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
               </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onEdit} aria-label="Edit note" title="Edit note">
                 <FilePenLine className="h-4 w-4" />
