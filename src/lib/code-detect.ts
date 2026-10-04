@@ -392,10 +392,31 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+const contentTypeCache = new Map<string, ContentDetectionResult>();
+const codeBlockCache = new Map<string, CodeDetectionResult>();
+const MAX_CACHE_SIZE = 100;
+const MAX_TEXT_LENGTH_FOR_CACHE = 50000;
+
+function getFromCache<T>(cache: Map<string, T>, key: string): T | undefined {
+  if (key.length > MAX_TEXT_LENGTH_FOR_CACHE) return undefined;
+  return cache.get(key);
+}
+
+function setInCache<T>(cache: Map<string, T>, key: string, value: T): void {
+  if (key.length > MAX_TEXT_LENGTH_FOR_CACHE) return;
+  if (cache.size >= MAX_CACHE_SIZE) {
+    const firstKey = cache.keys().next().value;
+    if (firstKey !== undefined) {
+      cache.delete(firstKey);
+    }
+  }
+  cache.set(key, value);
+}
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
-export function detectContentType(text: string): ContentDetectionResult {
+function computeContentType(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
@@ -416,7 +437,7 @@ export function detectContentType(text: string): ContentDetectionResult {
   }
 
   // 2. Check for Code Block detection
-  const codeResult = detectCodeBlock(normalized);
+  const codeResult = computeCodeBlock(normalized);
 
   // 3. Check for structural Markdown indicators
   const hasFencedBlocks = /```[a-zA-Z0-9_-]*\n[\s\S]+?\n```/.test(normalized);
@@ -468,10 +489,19 @@ export function detectContentType(text: string): ContentDetectionResult {
   };
 }
 
+export function detectContentType(text: string): ContentDetectionResult {
+  const cached = getFromCache(contentTypeCache, text);
+  if (cached) return cached;
+
+  const result = computeContentType(text);
+  setInCache(contentTypeCache, text, result);
+  return result;
+}
+
 /**
  * Retained for backwards compatibility across existing components.
  */
-export function detectCodeBlock(text: string): CodeDetectionResult {
+function computeCodeBlock(text: string): CodeDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
@@ -535,3 +565,11 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
   };
 }
 
+export function detectCodeBlock(text: string): CodeDetectionResult {
+  const cached = getFromCache(codeBlockCache, text);
+  if (cached) return cached;
+
+  const result = computeCodeBlock(text);
+  setInCache(codeBlockCache, text, result);
+  return result;
+}
