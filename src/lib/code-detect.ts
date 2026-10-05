@@ -395,7 +395,16 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
-export function detectContentType(text: string): ContentDetectionResult {
+
+const contentCache = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 500;
+const MAX_TEXT_LENGTH_FOR_CACHE = 50000;
+
+/**
+ * Internal implementation of detectContentType.
+ */
+function _detectContentType(text: string): ContentDetectionResult {
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
@@ -468,9 +477,37 @@ export function detectContentType(text: string): ContentDetectionResult {
   };
 }
 
+
+/**
+ * Detects whether content is pure code, Markdown, or plain text.
+ * Uses a Map cache to memoize expensive regex operations.
+ */
+export function detectContentType(text: string): ContentDetectionResult {
+  if (!text || text.length > MAX_TEXT_LENGTH_FOR_CACHE) {
+    return _detectContentType(text);
+  }
+
+  if (contentCache.has(text)) {
+    return contentCache.get(text)!;
+  }
+
+  const result = _detectContentType(text);
+
+  if (contentCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = contentCache.keys().next().value;
+    if (firstKey !== undefined) {
+      contentCache.delete(firstKey);
+    }
+  }
+
+  contentCache.set(text, result);
+  return result;
+}
+
 /**
  * Retained for backwards compatibility across existing components.
  */
+
 export function detectCodeBlock(text: string): CodeDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
