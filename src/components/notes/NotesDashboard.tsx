@@ -12,7 +12,7 @@ import { NotesFooter } from '@/components/notes/NotesFooter';
 const NoteModal = dynamic(() => import('@/components/notes/NoteModal').then(mod => mod.NoteModal), { ssr: false });
 const NoteViewer = dynamic(() => import('@/components/notes/NoteViewer').then(mod => mod.NoteViewer), { ssr: false });
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Loader2 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -44,6 +44,7 @@ const SidebarNoteItem = React.memo(({
       type="button"
       onClick={() => onClick(note)}
       aria-current={isActive ? "true" : undefined}
+      aria-label={`View note: ${note.title}`}
       className={`w-full rounded-lg border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
         isActive
           ? `border-primary/80 bg-primary/10 ${activeSidebarGlowClass}`
@@ -67,6 +68,7 @@ export function NotesDashboard() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [isViewerDeleteDialogOpen, setIsViewerDeleteDialogOpen] = useState(false);
+  const [isDeletingViewerNote, setIsDeletingViewerNote] = useState(false);
   const [hasOpenedModal, setHasOpenedModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [cols, setCols] = useState(1);
@@ -238,7 +240,8 @@ export function NotesDashboard() {
     trackEvent('Copy Note', `Copied content of note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
   }, [viewingNote, toast, user]);
 
-  const handleDeleteViewerNote = useCallback(async () => {
+  const handleDeleteViewerNote = useCallback(async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    if (e) e.preventDefault();
     if (!viewingNote) return;
 
     if (viewingNote.userId !== activeUid) {
@@ -251,6 +254,7 @@ export function NotesDashboard() {
       return;
     }
 
+    setIsDeletingViewerNote(true);
     try {
       await deleteDoc(doc(db, 'notes', viewingNote.id));
       toast({
@@ -259,15 +263,16 @@ export function NotesDashboard() {
       });
       trackEvent('Delete Note', `Deleted note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
       setViewingNote(null);
+      setIsViewerDeleteDialogOpen(false);
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Error',
         description: 'Failed to delete the note.',
       });
+    } finally {
+      setIsDeletingViewerNote(false);
     }
-
-    setIsViewerDeleteDialogOpen(false);
   }, [viewingNote, activeUid, toast, user]);
 
   const handleOpenViewerDeleteDialogOpen = useCallback(() => {
@@ -444,12 +449,20 @@ export function NotesDashboard() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletingViewerNote}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteViewerNote}
+              disabled={isDeletingViewerNote}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {isDeletingViewerNote ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
