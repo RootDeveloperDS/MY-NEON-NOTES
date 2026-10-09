@@ -162,18 +162,31 @@ export function NotesDashboard() {
     setSelectedNote(null);
   };
 
+
+  // Use a WeakMap to cache lowercased strings lazily per Note instance
+  // This preserves referential equality of Notes and avoids O(n) map loops on every keystroke
+  const searchCache = useMemo(() => new WeakMap<Note, { title: string, content: string }>(), []);
+
   // Use useDeferredValue for searchTerm to avoid blocking main thread on render-heavy filter operations
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
-  }, [notes, deferredSearchTerm]);
+
+    return notes.filter((note) => {
+      let cached = searchCache.get(note);
+      if (!cached) {
+        cached = {
+          title: note.title.toLowerCase(),
+          content: note.content.toLowerCase()
+        };
+        searchCache.set(note, cached);
+      }
+      return cached.title.includes(lowercasedSearchTerm) || cached.content.includes(lowercasedSearchTerm);
+    });
+  }, [notes, deferredSearchTerm, searchCache]);
+
 
   const masonryColumns = useMemo(() => {
     const result: Note[][] = Array.from({ length: cols }, () => []);
