@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -403,14 +404,22 @@ export function NotesDashboard() {
         </div>
       )}
 
-      <Button
-        onClick={() => handleOpenModal()}
-        className="fixed bottom-4 right-4 z-30 md:bottom-8 md:right-8 h-14 w-14 md:h-16 md:w-16 rounded-full bg-primary text-primary-foreground shadow-lg animate-neon-glow"
-        aria-label="Add new note"
-        title="Add new note"
-      >
-        <Plus className="h-8 w-8" />
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => handleOpenModal()}
+              className="fixed bottom-4 right-4 z-30 md:bottom-8 md:right-8 h-14 w-14 md:h-16 md:w-16 rounded-full bg-primary text-primary-foreground shadow-lg animate-neon-glow"
+              aria-label="Add new note"
+            >
+              <Plus className="h-8 w-8" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" sideOffset={10}>
+            <p>Add new note</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {hasOpenedModal && (
         <NoteModal
