@@ -12,7 +12,7 @@ import { NotesFooter } from '@/components/notes/NotesFooter';
 const NoteModal = dynamic(() => import('@/components/notes/NoteModal').then(mod => mod.NoteModal), { ssr: false });
 const NoteViewer = dynamic(() => import('@/components/notes/NoteViewer').then(mod => mod.NoteViewer), { ssr: false });
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Loader2 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { trackEvent } from '@/lib/analytics';
 import { useRouter } from 'next/navigation';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
@@ -67,6 +68,7 @@ export function NotesDashboard() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [isViewerDeleteDialogOpen, setIsViewerDeleteDialogOpen] = useState(false);
+  const [isDeletingViewerNote, setIsDeletingViewerNote] = useState(false);
   const [hasOpenedModal, setHasOpenedModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [cols, setCols] = useState(1);
@@ -238,7 +240,8 @@ export function NotesDashboard() {
     trackEvent('Copy Note', `Copied content of note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
   }, [viewingNote, toast, user]);
 
-  const handleDeleteViewerNote = useCallback(async () => {
+  const handleDeleteViewerNote = useCallback(async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    if (e) e.preventDefault();
     if (!viewingNote) return;
 
     if (viewingNote.userId !== activeUid) {
@@ -251,6 +254,7 @@ export function NotesDashboard() {
       return;
     }
 
+    setIsDeletingViewerNote(true);
     try {
       await deleteDoc(doc(db, 'notes', viewingNote.id));
       toast({
@@ -265,9 +269,10 @@ export function NotesDashboard() {
         title: 'Error',
         description: 'Failed to delete the note.',
       });
+    } finally {
+      setIsDeletingViewerNote(false);
+      setIsViewerDeleteDialogOpen(false);
     }
-
-    setIsViewerDeleteDialogOpen(false);
   }, [viewingNote, activeUid, toast, user]);
 
   const handleOpenViewerDeleteDialogOpen = useCallback(() => {
@@ -403,14 +408,20 @@ export function NotesDashboard() {
         </div>
       )}
 
-      <Button
-        onClick={() => handleOpenModal()}
-        className="fixed bottom-4 right-4 z-30 md:bottom-8 md:right-8 h-14 w-14 md:h-16 md:w-16 rounded-full bg-primary text-primary-foreground shadow-lg animate-neon-glow"
-        aria-label="Add new note"
-        title="Add new note"
-      >
-        <Plus className="h-8 w-8" />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={() => handleOpenModal()}
+            className="fixed bottom-4 right-4 z-30 md:bottom-8 md:right-8 h-14 w-14 md:h-16 md:w-16 rounded-full bg-primary text-primary-foreground shadow-lg animate-neon-glow"
+            aria-label="Add new note"
+          >
+            <Plus className="h-8 w-8" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="bg-primary/10 border-primary/20 text-primary">
+          <p>Add new note</p>
+        </TooltipContent>
+      </Tooltip>
 
       {hasOpenedModal && (
         <NoteModal
@@ -444,12 +455,20 @@ export function NotesDashboard() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletingViewerNote}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteViewerNote}
+              disabled={isDeletingViewerNote}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {isDeletingViewerNote ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
