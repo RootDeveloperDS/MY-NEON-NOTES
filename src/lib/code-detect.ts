@@ -298,6 +298,12 @@ export const normalizeLanguage = (lang: string | undefined): DetectedLanguage =>
   return map[clean] || 'unknown';
 };
 
+const MAX_CACHE_SIZE = 100;
+const MAX_TEXT_LENGTH = 50000;
+
+const contentDetectionCache = new Map<string, ContentDetectionResult>();
+const codeBlockDetectionCache = new Map<string, CodeDetectionResult>();
+
 /**
  * Checks if a string contains genuine Markdown syntax patterns.
  * Designed strictly to prevent false positives on code files (Python, Bash, Shell) and plain text.
@@ -396,9 +402,24 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
  * Detects whether content is pure code, Markdown, or plain text.
  */
 export function detectContentType(text: string): ContentDetectionResult {
+  const isCachable = text.length <= MAX_TEXT_LENGTH;
+  if (isCachable && contentDetectionCache.has(text)) {
+    return contentDetectionCache.get(text)!;
+  }
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
-    return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+    const result: ContentDetectionResult = { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+    if (isCachable) {
+      if (contentDetectionCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = contentDetectionCache.keys().next().value;
+        if (firstKey !== undefined) {
+          contentDetectionCache.delete(firstKey);
+        }
+      }
+      contentDetectionCache.set(text, result);
+    }
+    return result;
   }
 
   // 1. Check if the text is entirely a single fenced code block (e.g. ```python\ndef foo():\n```)
@@ -459,22 +480,48 @@ export function detectContentType(text: string): ContentDetectionResult {
   }
 
   // 6. Default to plain text
-  return {
+  const finalResult: ContentDetectionResult = {
     type: 'text',
     isMarkdown: false,
     isCode: false,
     language: 'unknown',
     score: 0,
   };
+
+  if (isCachable) {
+    if (contentDetectionCache.size >= MAX_CACHE_SIZE) {
+      const firstKey = contentDetectionCache.keys().next().value;
+      if (firstKey !== undefined) {
+        contentDetectionCache.delete(firstKey);
+      }
+    }
+    contentDetectionCache.set(text, finalResult);
+  }
+  return finalResult;
 }
 
 /**
  * Retained for backwards compatibility across existing components.
  */
 export function detectCodeBlock(text: string): CodeDetectionResult {
+  const isCachable = text.length <= MAX_TEXT_LENGTH;
+  if (isCachable && codeBlockDetectionCache.has(text)) {
+    return codeBlockDetectionCache.get(text)!;
+  }
+
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
-    return { isCode: false, language: 'unknown', score: 0 };
+    const result: CodeDetectionResult = { isCode: false, language: 'unknown', score: 0 };
+    if (isCachable) {
+      if (codeBlockDetectionCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = codeBlockDetectionCache.keys().next().value;
+        if (firstKey !== undefined) {
+          codeBlockDetectionCache.delete(firstKey);
+        }
+      }
+      codeBlockDetectionCache.set(text, result);
+    }
+    return result;
   }
 
   // 1. Check for markdown code fences (e.g. ```python)
@@ -528,10 +575,21 @@ export function detectCodeBlock(text: string): CodeDetectionResult {
     }
   }
 
-  return {
+  const finalResult: CodeDetectionResult = {
     isCode,
     language: isCode ? bestLanguage : 'unknown',
     score: maxScore,
   };
+
+  if (isCachable) {
+    if (codeBlockDetectionCache.size >= MAX_CACHE_SIZE) {
+      const firstKey = codeBlockDetectionCache.keys().next().value;
+      if (firstKey !== undefined) {
+        codeBlockDetectionCache.delete(firstKey);
+      }
+    }
+    codeBlockDetectionCache.set(text, finalResult);
+  }
+  return finalResult;
 }
 
