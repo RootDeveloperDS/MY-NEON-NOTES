@@ -9,6 +9,8 @@ import { NotesHeader } from '@/components/notes/NotesHeader';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { NotesFooter } from '@/components/notes/NotesFooter';
 
+const searchCache = new WeakMap<Note, { title: string; content: string }>();
+
 const NoteModal = dynamic(() => import('@/components/notes/NoteModal').then(mod => mod.NoteModal), { ssr: false });
 const NoteViewer = dynamic(() => import('@/components/notes/NoteViewer').then(mod => mod.NoteViewer), { ssr: false });
 import { Button } from '@/components/ui/button';
@@ -168,11 +170,20 @@ export function NotesDashboard() {
   const filteredNotes = useMemo(() => {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
-    );
+    return notes.filter((note) => {
+      let cached = searchCache.get(note);
+      if (!cached) {
+        cached = {
+          title: note.title.toLowerCase(),
+          content: note.content.toLowerCase(),
+        };
+        searchCache.set(note, cached);
+      }
+      return (
+        cached.title.includes(lowercasedSearchTerm) ||
+        cached.content.includes(lowercasedSearchTerm)
+      );
+    });
   }, [notes, deferredSearchTerm]);
 
   const masonryColumns = useMemo(() => {
