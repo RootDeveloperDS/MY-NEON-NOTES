@@ -10,6 +10,7 @@ import { detectContentType, LANGUAGE_DISPLAY_NAMES } from '@/lib/code-detect';
 import { ViewModeToggle, type ViewMode } from '@/components/notes/ViewModeToggle';
 import dynamic from 'next/dynamic';
 import { doc } from 'firebase/firestore';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
@@ -124,10 +125,17 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
             <div className="flex flex-wrap items-center gap-2">
               <CardTitle className="font-sans font-bold text-2xl text-primary break-words [overflow-wrap:anywhere]">{note.title}</CardTitle>
               {note.isPublic && (
-                <span className="flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-500 shadow-sm uppercase tracking-wider mt-1" title="Public Note">
-                  <Globe className="h-3 w-3" />
-                  Public
-                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-500 shadow-sm uppercase tracking-wider mt-1 cursor-help">
+                      <Globe className="h-3 w-3" />
+                      Public
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Public Note</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
               {contentDetection.isMarkdown && (
                 <span className="flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent uppercase tracking-wider mt-1 shadow-sm">
@@ -160,25 +168,52 @@ export const NoteViewer = memo(function NoteViewer({ note, onBack, onEdit, onCop
               />
             </div>
             <div className="flex items-center gap-1 rounded-md border border-primary/30 bg-background/40 p-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} aria-label={isShared ? "Link copied" : "Share note"} title={isShared ? "Link copied" : "Share note"}>
-                {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onEdit} aria-label="Edit note" title="Edit note">
-                <FilePenLine className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => { onCopy(); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }} aria-label={isCopied ? "Note copied" : "Copy note content"} title={isCopied ? "Note copied" : "Copy note content"}>
-                {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive/80 hover:text-destructive"
-                onClick={onDelete}
-                aria-label="Delete note"
-                title="Delete note"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={handleShareClick} aria-label={isShared ? "Link copied" : "Share note"}>
+                    {isShared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isShared ? "Link copied" : "Share note"}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={onEdit} aria-label="Edit note">
+                    <FilePenLine className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Edit note</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={() => { onCopy(); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }} aria-label={isCopied ? "Note copied" : "Copy note content"}>
+                    {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isCopied ? "Note copied" : "Copy note content"}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive/80 hover:text-destructive"
+                    onClick={onDelete}
+                    aria-label="Delete note"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Delete note</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '@/components/theme-provider';
 import { jsonLd, softwareApplicationJsonLd, websiteJsonLd, faqJsonLd, breadcrumbJsonLd } from './metadata';
 import { Orbitron, Source_Code_Pro, Roboto } from 'next/font/google';
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export { metadata } from './metadata';
 
@@ -55,7 +56,9 @@ export default function RootLayout({
           themes={['legacy', 'cyberpunk']}
         >
           <AuthProvider>
-            {children}
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>
