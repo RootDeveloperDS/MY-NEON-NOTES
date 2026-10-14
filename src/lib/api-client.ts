@@ -19,11 +19,25 @@ const buildHeaders = async (initHeaders?: HeadersInit): Promise<Headers> => {
 
 export const apiFetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
   const isFirstParty = () => {
-    if (typeof window === 'undefined') return true;
     let urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    // Explicitly handle safe relative paths early to prevent URL parsing failures
+    if (urlString.startsWith('/') && !/^\/([\\\/])/.test(urlString)) return true;
+
     try {
-      const parsed = new URL(urlString, window.location.origin);
-      return parsed.origin === window.location.origin;
+      // Use window.location.origin in client, fallback to NEXT_PUBLIC_SITE_URL in SSR
+      let baseOrigin: string | undefined;
+
+      if (typeof window !== 'undefined') {
+        baseOrigin = window.location.origin;
+      } else if (process.env.NEXT_PUBLIC_SITE_URL) {
+        baseOrigin = new URL(process.env.NEXT_PUBLIC_SITE_URL).origin;
+      }
+
+      if (!baseOrigin) return false;
+
+      const parsed = new URL(urlString, baseOrigin);
+      return parsed.origin === baseOrigin;
     } catch {
       return false;
     }
