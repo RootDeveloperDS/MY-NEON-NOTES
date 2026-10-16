@@ -392,10 +392,43 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+// Map-based FIFO cache for expensive regex detections. Limit size to prevent memory bloat.
+const DETECTION_CACHE_MAX_SIZE = 500;
+const detectionCache = new Map<string, ContentDetectionResult>();
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
 export function detectContentType(text: string): ContentDetectionResult {
+  if (text.length === 0) {
+    return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+  }
+
+  // Bypass cache for excessively large texts to prevent memory leaks
+  if (text.length > 50000) {
+    return _detectContentType(text);
+  }
+
+  const cached = detectionCache.get(text);
+  if (cached) {
+    return cached;
+  }
+
+  const result = _detectContentType(text);
+
+  if (detectionCache.size >= DETECTION_CACHE_MAX_SIZE) {
+    // Evict oldest entry (FIFO)
+    const firstKey = detectionCache.keys().next().value;
+    if (firstKey !== undefined) {
+      detectionCache.delete(firstKey);
+    }
+  }
+
+  detectionCache.set(text, result);
+  return result;
+}
+
+function _detectContentType(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
