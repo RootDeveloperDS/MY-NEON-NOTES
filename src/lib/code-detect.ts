@@ -392,15 +392,32 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+const DETECTION_CACHE = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 100;
+const MAX_CACHE_TEXT_LENGTH = 50000;
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
 export function detectContentType(text: string): ContentDetectionResult {
-  const normalized = text.replace(/\r\n/g, '\n').trim();
-  if (!normalized) {
-    return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+  const isCacheable = text.length <= MAX_CACHE_TEXT_LENGTH;
+  if (isCacheable && DETECTION_CACHE.has(text)) {
+    return DETECTION_CACHE.get(text)!;
   }
 
+  const normalized = text.replace(/\r\n/g, '\n').trim();
+  if (!normalized) {
+    const result: ContentDetectionResult = { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
+    if (isCacheable) {
+        if (DETECTION_CACHE.size >= MAX_CACHE_SIZE) {
+            DETECTION_CACHE.delete(DETECTION_CACHE.keys().next().value!);
+        }
+        DETECTION_CACHE.set(text, result);
+    }
+    return result;
+  }
+
+  const doDetection = (): ContentDetectionResult => {
   // 1. Check if the text is entirely a single fenced code block (e.g. ```python\ndef foo():\n```)
   const singleFenceMatch = normalized.match(/^```([^\s\n]*)\n([\s\S]*?)\n?```$/);
   if (singleFenceMatch) {
@@ -466,6 +483,18 @@ export function detectContentType(text: string): ContentDetectionResult {
     language: 'unknown',
     score: 0,
   };
+  };
+
+  const detectionResult = doDetection();
+
+  if (isCacheable) {
+      if (DETECTION_CACHE.size >= MAX_CACHE_SIZE) {
+          DETECTION_CACHE.delete(DETECTION_CACHE.keys().next().value!);
+      }
+      DETECTION_CACHE.set(text, detectionResult);
+  }
+
+  return detectionResult;
 }
 
 /**
