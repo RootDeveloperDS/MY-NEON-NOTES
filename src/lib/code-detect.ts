@@ -392,10 +392,15 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+// Module-level FIFO cache for expensive content detection
+const contentDetectionCache = new Map<string, ContentDetectionResult>();
+const MAX_CACHE_SIZE = 100;
+const MAX_TEXT_LENGTH_FOR_CACHE = 50000;
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
-export function detectContentType(text: string): ContentDetectionResult {
+function _detectContentType(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
@@ -466,6 +471,28 @@ export function detectContentType(text: string): ContentDetectionResult {
     language: 'unknown',
     score: 0,
   };
+}
+
+export function detectContentType(text: string): ContentDetectionResult {
+  // Bypass cache for extremely large text to prevent memory bloat
+  if (text.length > MAX_TEXT_LENGTH_FOR_CACHE) {
+    return _detectContentType(text);
+  }
+
+  if (contentDetectionCache.has(text)) {
+    return contentDetectionCache.get(text)!;
+  }
+
+  const result = _detectContentType(text);
+
+  if (contentDetectionCache.size >= MAX_CACHE_SIZE) {
+    // FIFO eviction: remove the first added item
+    const firstKey = contentDetectionCache.keys().next().value;
+    if (firstKey) contentDetectionCache.delete(firstKey);
+  }
+
+  contentDetectionCache.set(text, result);
+  return result;
 }
 
 /**
