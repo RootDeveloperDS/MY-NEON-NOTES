@@ -392,10 +392,41 @@ export function isMarkdownContent(text: string): { isMarkdown: boolean; score: n
   };
 }
 
+// Caches for expensive regex operations
+const contentTypeCache = new Map<string, ContentDetectionResult>();
+const codeBlockCache = new Map<string, CodeDetectionResult>();
+const CACHE_MAX_SIZE = 100;
+const CACHE_MAX_INPUT_LENGTH = 50000;
+
+function setCache<K, V>(cache: Map<K, V>, key: K, value: V) {
+  if (cache.size >= CACHE_MAX_SIZE) {
+    // Remove oldest entry (first item in insertion order)
+    const firstKey = cache.keys().next().value;
+    if (firstKey !== undefined) {
+      cache.delete(firstKey);
+    }
+  }
+  cache.set(key, value);
+}
+
 /**
  * Detects whether content is pure code, Markdown, or plain text.
  */
 export function detectContentType(text: string): ContentDetectionResult {
+  if (text.length <= CACHE_MAX_INPUT_LENGTH && contentTypeCache.has(text)) {
+    return contentTypeCache.get(text)!;
+  }
+
+  const result = _detectContentType(text);
+
+  if (text.length <= CACHE_MAX_INPUT_LENGTH) {
+    setCache(contentTypeCache, text, result);
+  }
+
+  return result;
+}
+
+function _detectContentType(text: string): ContentDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { type: 'text', isMarkdown: false, isCode: false, language: 'unknown', score: 0 };
@@ -472,6 +503,20 @@ export function detectContentType(text: string): ContentDetectionResult {
  * Retained for backwards compatibility across existing components.
  */
 export function detectCodeBlock(text: string): CodeDetectionResult {
+  if (text.length <= CACHE_MAX_INPUT_LENGTH && codeBlockCache.has(text)) {
+    return codeBlockCache.get(text)!;
+  }
+
+  const result = _detectCodeBlock(text);
+
+  if (text.length <= CACHE_MAX_INPUT_LENGTH) {
+    setCache(codeBlockCache, text, result);
+  }
+
+  return result;
+}
+
+function _detectCodeBlock(text: string): CodeDetectionResult {
   const normalized = text.replace(/\r\n/g, '\n').trim();
   if (!normalized) {
     return { isCode: false, language: 'unknown', score: 0 };
