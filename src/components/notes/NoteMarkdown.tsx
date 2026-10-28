@@ -120,6 +120,10 @@ export const NoteMarkdown = memo(function NoteMarkdown({ content, className }: N
             return <tr className="hover:bg-primary/5 transition-colors">{children}</tr>;
           },
           a({ href, children }) {
+            if (/^(?:javascript|vbscript|data):/i.test(href?.trim() || '')) {
+              return <span className="text-muted-foreground">{children}</span>;
+            }
+
             return (
               <a
                 href={href}
