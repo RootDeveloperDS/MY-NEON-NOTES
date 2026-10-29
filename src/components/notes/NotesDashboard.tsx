@@ -12,7 +12,7 @@ import { NotesFooter } from '@/components/notes/NotesFooter';
 const NoteModal = dynamic(() => import('@/components/notes/NoteModal').then(mod => mod.NoteModal), { ssr: false });
 const NoteViewer = dynamic(() => import('@/components/notes/NoteViewer').then(mod => mod.NoteViewer), { ssr: false });
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Loader2 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -238,8 +238,12 @@ export function NotesDashboard() {
     trackEvent('Copy Note', `Copied content of note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
   }, [viewingNote, toast, user]);
 
-  const handleDeleteViewerNote = useCallback(async () => {
+  const [isDeletingViewerNote, setIsDeletingViewerNote] = useState(false);
+
+  const handleDeleteViewerNote = useCallback(async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    if (e) e.preventDefault();
     if (!viewingNote) return;
+    setIsDeletingViewerNote(true);
 
     if (viewingNote.userId !== activeUid) {
       toast({
@@ -253,6 +257,7 @@ export function NotesDashboard() {
 
     try {
       await deleteDoc(doc(db, 'notes', viewingNote.id));
+      setIsDeletingViewerNote(false);
       toast({
         title: 'Note Deleted',
         description: 'The note has been successfully deleted.',
@@ -260,6 +265,7 @@ export function NotesDashboard() {
       trackEvent('Delete Note', `Deleted note titled: "${viewingNote.title}"`, user?.displayName, user?.email);
       setViewingNote(null);
     } catch (error) {
+      setIsDeletingViewerNote(false);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -447,9 +453,11 @@ export function NotesDashboard() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteViewerNote}
+              disabled={isDeletingViewerNote}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {isDeletingViewerNote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isDeletingViewerNote ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
