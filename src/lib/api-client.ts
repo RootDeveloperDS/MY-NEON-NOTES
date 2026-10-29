@@ -19,11 +19,21 @@ const buildHeaders = async (initHeaders?: HeadersInit): Promise<Headers> => {
 
 export const apiFetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
   const isFirstParty = () => {
-    if (typeof window === 'undefined') return true;
     let urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    if (urlString.startsWith('/') && !/^\/([\\\/])/.test(urlString)) return true;
+
     try {
-      const parsed = new URL(urlString, window.location.origin);
-      return parsed.origin === window.location.origin;
+      let baseOrigin = '';
+      if (typeof window !== 'undefined') {
+        baseOrigin = window.location.origin;
+      } else {
+        const fallback = process.env.NEXT_PUBLIC_SITE_URL;
+        if (!fallback) return false;
+        baseOrigin = new URL(fallback).origin;
+      }
+      const parsed = new URL(urlString, baseOrigin);
+      return parsed.origin === baseOrigin;
     } catch {
       return false;
     }
