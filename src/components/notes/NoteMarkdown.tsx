@@ -120,6 +120,15 @@ export const NoteMarkdown = memo(function NoteMarkdown({ content, className }: N
             return <tr className="hover:bg-primary/5 transition-colors">{children}</tr>;
           },
           a({ href, children }) {
+            // Block unsafe URI schemes (javascript:, vbscript:, data:) to prevent XSS
+            const isUnsafe = /^(?:javascript|vbscript|data):/i.test(href?.trim() || '');
+            if (isUnsafe) {
+              return (
+                <span className="text-destructive underline decoration-destructive/40 underline-offset-2 font-medium" title="Unsafe link removed">
+                  {children}
+                </span>
+              );
+            }
             return (
               <a
                 href={href}
