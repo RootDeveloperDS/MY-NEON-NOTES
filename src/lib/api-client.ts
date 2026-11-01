@@ -19,8 +19,26 @@ const buildHeaders = async (initHeaders?: HeadersInit): Promise<Headers> => {
 
 export const apiFetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
   const isFirstParty = () => {
-    if (typeof window === 'undefined') return true;
-    let urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    const urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    // Explicitly handle safe relative paths early to prevent URL parsing failures
+    // while still rejecting protocol-relative (//) or backslash (/\) bypass attempts.
+    if (urlString.startsWith('/') && !/^\/([\\\/])/.test(urlString)) return true;
+
+    if (typeof window === 'undefined') {
+      // Server-Side validation using a safe fallback origin
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      if (!siteUrl) return false;
+
+      try {
+        const targetOrigin = new URL(urlString).origin;
+        const safeOrigin = new URL(siteUrl).origin;
+        return targetOrigin === safeOrigin;
+      } catch {
+        return false;
+      }
+    }
+
     try {
       const parsed = new URL(urlString, window.location.origin);
       return parsed.origin === window.location.origin;
