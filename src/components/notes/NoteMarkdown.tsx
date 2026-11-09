@@ -120,9 +120,14 @@ export const NoteMarkdown = memo(function NoteMarkdown({ content, className }: N
             return <tr className="hover:bg-primary/5 transition-colors">{children}</tr>;
           },
           a({ href, children }) {
+            // Defense-in-depth: only allow safe protocols or relative paths.
+            // This prevents bypasses using HTML entities like javascript&#58;
+            const isSafe = href && /^(?:https?|mailto|tel):/i.test(href.trim()) || href?.trim().startsWith('/') || href?.trim().startsWith('#');
+            const safeHref = isSafe ? href : undefined;
+
             return (
               <a
-                href={href}
+                href={safeHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary hover:text-accent transition-colors font-medium"

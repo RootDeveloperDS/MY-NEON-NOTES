@@ -19,8 +19,23 @@ const buildHeaders = async (initHeaders?: HeadersInit): Promise<Headers> => {
 
 export const apiFetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
   const isFirstParty = () => {
-    if (typeof window === 'undefined') return true;
     let urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    // Safely check for relative paths (must start with / but NOT // which is protocol-relative)
+    if (urlString.startsWith('/') && !urlString.startsWith('//')) return true;
+
+    if (typeof window === 'undefined') {
+      const fallbackUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      if (!fallbackUrl) return false;
+      try {
+        const parsedUrl = new URL(urlString);
+        const parsedFallback = new URL(fallbackUrl);
+        return parsedUrl.origin === parsedFallback.origin;
+      } catch {
+        return false;
+      }
+    }
+
     try {
       const parsed = new URL(urlString, window.location.origin);
       return parsed.origin === window.location.origin;
