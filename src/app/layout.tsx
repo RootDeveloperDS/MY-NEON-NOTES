@@ -4,6 +4,7 @@ import { AuthProvider } from '@/hooks/use-auth';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '@/components/theme-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { jsonLd, softwareApplicationJsonLd, websiteJsonLd, faqJsonLd, breadcrumbJsonLd } from './metadata';
 import { Orbitron, Source_Code_Pro, Roboto } from 'next/font/google';
 
@@ -55,7 +56,9 @@ export default function RootLayout({
           themes={['legacy', 'cyberpunk']}
         >
           <AuthProvider>
-            {children}
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>
