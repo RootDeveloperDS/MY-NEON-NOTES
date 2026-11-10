@@ -120,9 +120,29 @@ export const NoteMarkdown = memo(function NoteMarkdown({ content, className }: N
             return <tr className="hover:bg-primary/5 transition-colors">{children}</tr>;
           },
           a({ href, children }) {
+            let safeHref = undefined;
+            if (href) {
+              try {
+                // If it's a relative path starting with '/', ensure it doesn't start with '//' (protocol-relative)
+                if (href.startsWith('/') && !href.startsWith('//')) {
+                  safeHref = href;
+                } else if (href.startsWith('#')) { // anchor links
+                  safeHref = href;
+                } else {
+                  const url = new URL(href, 'http://dummy.com'); // use dummy base for parsing
+                  const protocol = url.protocol.toLowerCase();
+                  if (['http:', 'https:', 'mailto:', 'tel:'].includes(protocol)) {
+                    safeHref = href;
+                  }
+                }
+              } catch {
+                safeHref = undefined; // Invalid URLs are sanitized
+              }
+            }
+
             return (
               <a
-                href={href}
+                href={safeHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary hover:text-accent transition-colors font-medium"
