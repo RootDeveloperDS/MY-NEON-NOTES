@@ -1,5 +1,6 @@
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from '@/hooks/use-auth';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -54,9 +55,11 @@ export default function RootLayout({
           enableSystem={false}
           themes={['legacy', 'cyberpunk']}
         >
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <TooltipProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </TooltipProvider>
           <Toaster />
         </ThemeProvider>
         <Analytics />
