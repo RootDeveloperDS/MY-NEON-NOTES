@@ -25,6 +25,9 @@ const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
 
+const titleCache = new WeakMap<Note, string>();
+const contentCache = new WeakMap<Note, string>();
+
 // Extract sidebar note item to a separate memoized component to avoid O(n) rendering recalculations (e.g., formatDistanceToNow) when unrelated state changes.
 const SidebarNoteItem = React.memo(({
   note,
@@ -169,9 +172,22 @@ export function NotesDashboard() {
     if (!deferredSearchTerm) return notes;
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
     return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
+      (note) => {
+        let cachedTitle = titleCache.get(note);
+        if (cachedTitle === undefined) {
+          cachedTitle = note.title.toLowerCase();
+          titleCache.set(note, cachedTitle);
+        }
+
+        let cachedContent = contentCache.get(note);
+        if (cachedContent === undefined) {
+          cachedContent = note.content.toLowerCase();
+          contentCache.set(note, cachedContent);
+        }
+
+        return cachedTitle.includes(lowercasedSearchTerm) ||
+               cachedContent.includes(lowercasedSearchTerm);
+      }
     );
   }, [notes, deferredSearchTerm]);
 
