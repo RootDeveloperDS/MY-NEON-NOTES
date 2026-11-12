@@ -25,6 +25,24 @@ const splitViewMinHeightClass = 'lg:min-h-[calc(100vh-12rem)]';
 const splitViewGridClass = 'lg:grid-cols-[minmax(260px,32%)_1fr]';
 const activeSidebarGlowClass = 'shadow-[0_0_16px_hsl(var(--primary)/0.35)]';
 
+// Module-level caches for search filtering to preserve referential equality and avoid O(n) object property lowercasing on every keystroke
+const titleLowercaseCache = new WeakMap<Note, string>();
+const contentLowercaseCache = new WeakMap<Note, string>();
+
+const getLowercasedTitle = (note: Note) => {
+  if (!titleLowercaseCache.has(note)) {
+    titleLowercaseCache.set(note, note.title.toLowerCase());
+  }
+  return titleLowercaseCache.get(note)!;
+};
+
+const getLowercasedContent = (note: Note) => {
+  if (!contentLowercaseCache.has(note)) {
+    contentLowercaseCache.set(note, note.content.toLowerCase());
+  }
+  return contentLowercaseCache.get(note)!;
+};
+
 // Extract sidebar note item to a separate memoized component to avoid O(n) rendering recalculations (e.g., formatDistanceToNow) when unrelated state changes.
 const SidebarNoteItem = React.memo(({
   note,
@@ -170,8 +188,8 @@ export function NotesDashboard() {
     const lowercasedSearchTerm = deferredSearchTerm.toLowerCase();
     return notes.filter(
       (note) =>
-        note.title.toLowerCase().includes(lowercasedSearchTerm) ||
-        note.content.toLowerCase().includes(lowercasedSearchTerm)
+        getLowercasedTitle(note).includes(lowercasedSearchTerm) ||
+        getLowercasedContent(note).includes(lowercasedSearchTerm)
     );
   }, [notes, deferredSearchTerm]);
 
